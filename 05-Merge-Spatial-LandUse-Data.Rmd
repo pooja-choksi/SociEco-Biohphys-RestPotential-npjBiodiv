@@ -1,0 +1,294 @@
+---
+title: 'People-centric Restoration: Combine Spatial and land use data'
+author: "Pooja Choksi"
+date: '2022-06-07'
+output: html_document
+---
+
+COMBINING VILLAGE LEVEL SPATIAL AND LAND USE DATA
+
+In this chunk of code, we stitch the land-use census village data from code 01 to the shapefiles with the census 2011 codes from code 04.
+
+```{r setup, include=FALSE}
+
+#LIBRARIES
+library(data.table)
+library(dplyr)
+library(tidyr)
+library(sf)
+library(tools)
+library(rgdal)
+```
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+
+#Read in spatial data created for each state in the previous code 
+
+setwd("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-Original-BOundaries-From-Benjamin-data")
+
+pathname = "C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-Original-BOundaries-From-Benjamin-data"
+
+allstates <-list.files(pathname,pattern = "-Codes-Boundaries.shp")
+
+for (i in 1:length(allstates)) {
+  varName <- paste0(basename(allstates)[i])
+  assign(varName, readOGR(dsn = allstates[i]))
+}
+
+#Land use data from district census handbooks
+#this csv was created in code 01
+land_use = read.csv("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\All-State-LandUse-Combined.csv",
+header = TRUE, stringsAsFactors = FALSE,
+colClasses=c(Village_name= "character",
+                              Census_Code = "character",
+                              District_Name = "character",
+                              Subdistrict_Block="character",
+                              Total_Population = "integer",
+                              Total_Household= "integer"))
+
+#In this dataset the newly created state Telangana 
+land_use$State[which(land_use$District_Name == c("Adilabad", 
+                                                       "Karimnagar",
+                                                       "Khammam",
+                                                       "Mahbubnagar",
+                                                       "Medak",
+                                                       "Nalgonda",
+                                                       "Nizamabad",
+                                                       "Rangareddy",
+                                                       "Warangal"))] <- "Telangana"
+
+
+#Loop through all statenames to create new DFs to stitch with census 2011 boundaries
+for (variable in unique(land_use$State)) {
+  assign(variable, land_use %>% filter (State == variable), envir = .GlobalEnv)
+}
+
+#1. Andhra_Pradesh
+Andra_Pradesh_final <- sp::merge(`Andhra-Pradesh-Census2011-Codes-Boundaries.shp`, `Andhra Pradesh`, by.x = c("V_C_201"), 
+                           by.y = c("Census_Code"),
+                           duplicateGeoms = T)
+
+writeOGR(obj = Andra_Pradesh_final, layer = "Andra_Pradesh", dsn= "Andhra-Pradesh-Census2011-Codes-Boundaries-LandUse-V2.shp", driver = "ESRI Shapefile")
+
+#2. Assam
+Assam_final <- sp::merge(`Assam-Census2011-Codes-Boundaries.shp`, Assam, by.x = c("V_C_201"), 
+                   by.y = c("Census_Code"),
+                   duplicateGeoms = T)
+
+writeOGR(obj = Assam_final, layer = "Assam_final", dsn= "Assam-Census2011-Codes-Boundaries-LandUse.shp", driver = "ESRI Shapefile",
+         overwrite=T)
+
+#3. Bihar 
+Bihar_final <- sp::merge(`Bihar-Census2011-Codes-Boundaries.shp`, Bihar, by.x = c("V_C_201"), 
+                   by.y = c("Census_Code"),
+                   duplicateGeoms = T)
+
+writeOGR(obj = Bihar_final, layer = "Bihar_final", dsn= "Bihar-Census2011-Codes-Boundaries-LandUse.shp", driver = "ESRI Shapefile",
+         overwrite=T)
+
+#4. Gujarat
+Gujarat_final <- sp::merge(`Gujarat-Census2011-Codes-Boundaries.shp`, Gujarat, by.x = c("V_C_201"), 
+                     by.y = c("Census_Code"),
+                     duplicateGeoms = T)
+
+writeOGR(obj = Gujarat_final, layer = "Gujarat_final", dsn= "Gujarat-Census2011-Codes-Boundaries-LandUse.shp", driver = "ESRI Shapefile",
+         overwrite=T)
+
+#5. Haryana
+#Haryana's census code has an extra zero in front
+#Add a zero to Haryana land use data to match with spatial data
+Haryana$Census_Code <- sub("^", "0", Haryana$Census_Code)
+
+Haryana_final <- sp::merge(`Haryana-Census2011-Codes-Boundaries.shp`, Haryana, by.x = c("V_C_201"), 
+                     by.y = c("Census_Code"),
+                     duplicateGeoms = T)
+
+writeOGR(obj = Haryana_final, layer = "Haryana_final", dsn= "Haryana-Census2011-Codes-Boundaries-LandUse-V2.shp", driver = "ESRI Shapefile",
+         overwrite=T)
+
+#6. Himachal Pradesh
+#Himachal Pradesh's census code has an extra zero in front
+#Add a zero to Himachal Pradesh land use data to match with spatial data
+`Himachal Pradesh`$Census_Code <- sub("^", "0", `Himachal Pradesh`$Census_Code)
+
+Himachal_Pradesh_final <- sp::merge(`Himachal-Pradesh-Census2011-Codes-Boundaries.shp`, `Himachal Pradesh`, by.x = c("V_C_201"), 
+                              by.y = c("Census_Code"),
+                              duplicateGeoms = T)
+
+writeOGR(obj = Himachal_Pradesh_final, layer = "Himachal_Pradesh_final", dsn= "Himachal-Pradesh-Census2011-Codes-Boundaries-LandUse-V2.shp", driver = "ESRI Shapefile", overwrite=T)
+
+#7. Jammu- Kashmir
+#Jammu Kashmir's census code has an extra zero in front
+#Add a zero to Jammu Kashmir land use data to match with spatial data
+`Jammu Kashmir`$Census_Code <- sub("^", "00", `Jammu Kashmir`$Census_Code)
+
+Jammu_Kashmir_final <- sp::merge(`Jammu-Kashmir-Census2011-Codes-Boundaries.shp`,`Jammu Kashmir`, by.x = c("V_C_201"), 
+                          by.y = c("Census_Code"),
+                          duplicateGeoms = T)
+
+writeOGR(obj = Jammu_Kashmir_final, layer = "Jammu_Kashmir_final", dsn= "Jammu-Kashmir-Census2011-Codes-Boundaries-LandUse-V2.shp", driver = "ESRI Shapefile", overwrite=T)
+
+#8. Jharkhand
+Jharkhand_final <- sp::merge(`Jharkhand-Census2011-Codes-Boundaries.shp`, Jharkhand, by.x = c("V_C_201"), 
+                      by.y = c("Census_Code"),
+                      duplicateGeoms = T)
+
+writeOGR(obj = Jharkhand_final, layer = "Jharkhand_final", dsn= "Jharkhand-Census2011-Codes-Boundaries-LandUse.shp", driver = "ESRI Shapefile",
+         overwrite=T)
+
+#9 Karnataka
+Karnataka_final <- sp::merge(`Karnataka-Census2011-Codes-Boundaries.shp`, Karnataka, by.x = c("V_C_201"), 
+                              by.y = c("Census_Code"),
+                              duplicateGeoms = T)
+
+writeOGR(obj = Karnataka_final, layer = "Karnataka_final", dsn= "Karnataka-Census2011-Codes-Boundaries-LandUse.shp", driver = "ESRI Shapefile",
+         overwrite=T)
+
+#10. Kerala
+Kerala_final <-  sp::merge(`Kerala-Census2011-Codes-Boundaries.shp`, Kerala, by.x = c("V_C_201"), 
+                     by.y = c("Census_Code"),
+                     duplicateGeoms = T)
+
+writeOGR(obj = Kerala_final, layer = "Kerala_final", dsn= "Kerala-Census2011-Codes-Boundaries-LandUse-V2.shp", driver = "ESRI Shapefile",
+         overwrite=T)
+
+#11. Odisha
+Odisha_final <-  sp::merge(`Odisha-Census2011-Codes-Boundaries.shp`, Odisha, by.x = c("V_C_201"), 
+                     by.y = c("Census_Code"),
+                     duplicateGeoms = T)
+
+writeOGR(obj = Odisha_final, layer = "Odisha_final", dsn= "Odisha-Census2011-Codes-Boundaries-LandUse.shp", driver = "ESRI Shapefile",
+         overwrite=T)
+
+#12. Punjab
+#Punjab's census code has an extra zero in front
+#Add a zero to Punjab land use data to match with spatial data
+Punjab$Census_Code <- sub("^", "0", Punjab$Census_Code)
+
+Punjab_final <-  sp::merge(`Punjab-Census2011-Codes-Boundaries.shp`, Punjab, by.x = c("V_C_201"), 
+                     by.y = c("Census_Code"),
+                     duplicateGeoms = T)
+
+writeOGR(obj = Punjab_final, layer = "Punjab_final", dsn= "Punjab-Census2011-Codes-Boundaries-LandUse-V2.shp", driver = "ESRI Shapefile",
+         overwrite=T)
+
+#13. Rajasthan
+#Issue with Rajasthan was that some of the census code is 5 characters
+#the remaining are the reuglar 6 characters
+#code below adds a zero in case the string is only 5 characters
+Rajasthan_spatial = readOGR("C:\\Users\\pooja\\Documents\\Census2011-Original-BOundaries-From-Benjamin-data\\Rajasthan-Census2011-Codes-Boundaries.shp")
+
+Rajasthan$Census_Code <- sapply(Rajasthan$Census_Code, function(x) ifelse(grepl("^[0-9]", x), paste0('0', x), x))
+
+Rajasthan_final <- sp::merge(`Rajasthan-Census2011-Codes-Boundaries.shp`, Rajasthan, by.x = c("V_C_201"), 
+                        by.y = c("Census_Code"),
+                        duplicateGeoms = T)
+
+writeOGR(obj = Rajasthan_final, layer = "Rajasthan_final", dsn= "Rajasthan-Census2011-Codes-Boundaries-LandUse-V2.shp", driver = "ESRI Shapefile",
+         overwrite=T)
+
+#14. Sikkim
+Sikkim_final <- sp::merge(`Sikkim-Census2011-Codes-Boundaries.shp`, Sikkim, by.x = c("V_C_201"), 
+                    by.y = c("Census_Code"),
+                    duplicateGeoms = T)
+
+writeOGR(obj = Sikkim_final, layer = "Sikkim_final", dsn= "Sikkim-Census2011-Codes-Boundaries-LandUse.shp", driver = "ESRI Shapefile",
+         overwrite= T)
+
+#15. Tamil Nadu
+Tamil_Nadu_final <- sp::merge(`Tamil-Nadu-Census2011-Codes-Boundaries.shp`, Tamil_Nadu, by.x = c("V_C_201"), 
+                                 by.y = c("Census_Code"),
+                                 duplicateGeoms = T)
+
+writeOGR(obj = Tamil_Nadu_final, layer = "Tamil_Nadu_final", dsn= "Tamil-Nadu-Census2011-Codes-Boundaries-LandUse.shp", driver = "ESRI Shapefile",
+         overwrite= T)
+
+#17 Telangana
+Telangana_final <- sp::merge(`Telangana-Census2011-Codes-Boundaries.shp`, Telangana, by.x = c("V_C_201"), 
+                     by.y = c("Census_Code"),
+                     duplicateGeoms = T)
+
+writeOGR(obj = Telangana_final, layer = "Telangana_final", dsn= "Telangana-Census2011-Codes-Boundaries-LandUse.shp", driver = "ESRI Shapefile",
+         overwrite= T)
+
+
+#18. Tripura
+Tripura_final <- sp::merge(`Tripura-Census2011-Codes-Boundaries.shp`, Tripura, by.x = c("V_C_201"), 
+                     by.y = c("Census_Code"),
+                     duplicateGeoms = T)
+
+writeOGR(obj = Tripura_final, layer = "Tripura_final", dsn= "Tripura-Census2011-Codes-Boundaries-LandUse.shp", driver = "ESRI Shapefile",
+         overwrite= T)
+
+#19. Uttar Pradesh 
+Uttar_Pradesh_final <- sp::merge(`Uttar-Pradesh-Census2011-Codes-Boundaries.shp`, `Uttar Pradesh`, by.x = c("V_C_201"), 
+                           by.y = c("Census_Code"),
+                           duplicateGeoms = T)
+
+writeOGR(obj = Uttar_Pradesh_final, layer = "Uttar_Pradesh_final", dsn= "Uttar-Pradesh-Census2011-Codes-Boundaries-LandUse.shp", driver = "ESRI Shapefile",
+         overwrite= T)
+
+#20. Uttarakhand
+#Code needs an extra zero at the beginning
+Uttarakhand$Census_Code <- sub("^", "0", Uttarakhand$Census_Code)
+
+Uttarakhand_final <- sp::merge(`Uttarakhand-Census2011-Codes-Boundaries.shp`, Uttarakhand, by.x = c("V_C_201"), 
+                         by.y = c("Census_Code"),
+                         duplicateGeoms = T)
+
+writeOGR(obj = Uttarakhand_final, layer = "Uttarakhand_final", dsn= "Uttarakhand-Census2011-Codes-Boundaries-LandUse.shp", driver = "ESRI Shapefile",
+         overwrite= T)
+
+#21 West Bengal 
+West_Bengal_final <- sp::merge(`West_Bengal-Census2011-Codes-Boundaries.shp`, West_Bengal, by.x = c("V_C_201"), 
+                         by.y = c("Census_Code"),
+                         duplicateGeoms = T)
+
+writeOGR(obj = West_Bengal_final, layer = "West_Bengal_final", dsn= "West-Bengal-Census2011-Codes-Boundaries-LandUse.shp", driver = "ESRI Shapefile",
+         overwrite= T)
+
+#22 Maharashtra
+#This already had census 2011 codes attached 
+#read in the files separately 
+Maharashtra_spatial = readOGR("C:\\Users\\pooja\\Documents\\Census2011-Original-BOundaries-From-Benjamin-data\\Maharashtra-Census2011-Original-Boundaries.shp")
+
+Maharashtra_final <- sp::merge(Maharashtra_spatial, Maharashtra, by.x = c("Census_Cod"), 
+                                  by.y = c("Census_Code"),
+                                  duplicateGeoms = T)
+
+writeOGR(obj = Maharashtra_final, layer = "Maharashtra_final", dsn= "Maharashtra-Census2011-Codes-Boundaries-LandUse.shp", driver = "ESRI Shapefile",overwrite= T)
+
+#23 Madhya Pradesh 
+#This already had census 2011 codes attached 
+#read in the files separately 
+Madhya_Pradesh_spatial = readOGR("C:\\Users\\pooja\\Documents\\Census2011-Original-BOundaries-From-Benjamin-data\\Madhya-Pradesh-Census2011-Original-Boundaries.shp")
+
+Madhya_Pradesh_final <- sp::merge(`Madhya-Pradesh-Census2011-Original-Boundaries.shp`, `Madhya Pradesh`, by.x = c("CenCode_V2"), 
+                               by.y = c("Census_Code"),
+                               duplicateGeoms = T)
+
+writeOGR(obj = Madhya_Pradesh_final, layer = "Madhya_Pradesh_final", dsn= "Madhya-Pradesh-Census2011-Codes-Boundaries-LandUse-V2.shp", driver = "ESRI Shapefile", overwrite= T)
+
+#24 Chhatisgarh 
+#had files with 2011 census codes.
+Chhatisgarh_spatial = readOGR("C:\\Users\\pooja\\Documents\\Census2011-Original-BOundaries-From-Benjamin-data\\Chattisgarh-Census2011-Original-Boundaries.shp")
+
+#so no need to combine spatial data with directory info
+
+Chhatisgarh_final <- sp::merge(`Chattisgarh-Census2011-Original-Boundaries.shp`, Chhattisgarh, by.x = c("CenCode_V2"), 
+                                  by.y = c("Census_Code"),
+                                  duplicateGeoms = T)
+
+writeOGR(obj = Chhatisgarh_final, layer = "Chhatisgarh_final", dsn= "Chhattisgarh-Census2011-Codes-Boundaries-LandUse.shp", driver = "ESRI Shapefile", overwrite= T)
+
+#25. Manipur
+Manipur_spatial = readOGR("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-Original-BOundaries-From-Benjamin-data\\Manipur-Census2011-Codes-Boundaries.shp")
+
+Manipur_final <- sp::merge(Manipur_spatial, Manipur, by.x = c("V_C_201"), 
+                                  by.y = c("Census_Code"),
+                                  duplicateGeoms = T)
+
+writeOGR(obj = Manipur_final, layer = "Maniupur_final", dsn= "Manipur-Census2011-Codes-Boundaries-LandUse.shp", driver = "ESRI Shapefile", overwrite= T)
+
+
+```

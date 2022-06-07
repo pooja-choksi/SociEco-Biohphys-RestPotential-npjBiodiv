@@ -1,0 +1,58 @@
+---
+title: "People-centric Restoration: Combine Census 2011 and 2001 codes to match spatial and land use data"
+author: "Pooja Choksi"
+date: '2022-06-07'
+output: html_document
+---
+
+DATA PREPARATION TO COMBINE LAND USE RECORDS AND SPATIAL DATA
+
+In this chunk of code, we combine all the state census code directories the 2001 and 2011 codes are available in this directory (https://censusindia.gov.in/DigitalLibrary/2011CodeDirectory.aspx). 
+
+```{r setup, include=FALSE}
+#LIBRARIES
+library(data.table)
+library(dplyr)
+library(tidyr)
+library("rio")
+library("purrr")
+
+```
+
+```{r pressure, message = FALSE, warning= FALSE, include = TRUE}
+
+#DATA
+#Convert all excel files to csv files 
+setwd("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-2001-village-directory")
+xls <- dir(pattern = "xls")
+created <- mapply(convert, xls, gsub("xls", "csv", xls))
+
+rdir_01 <- read.csv("/Volumes/PD2/Global_Restoration_potential/Census2011-2001-village-directory/Rdir_2001_MDDS_09.csv")
+View(rdir_01)
+
+#Clean the data 
+# Get all the files that end in a csv in a given folder that you specify
+path = "C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-2001-village-directory"
+
+files_to_read <- list.files(path = path, pattern = ".csv", full.names = T)
+
+# Read in and row bind all csv to return a single data frame
+census_code_combined <- map_dfr(files_to_read, ~read.csv(file = .x,
+                                        skip = 3, # Skip first 2 lines which are the column names and the state
+                                        header = FALSE, # Skip header as we provide new col names
+                                        col.names = c("St_Code_2001", "Dst_Code_2001",
+                                                      "SubDist_Code_2001", "Vill_Code_2001",
+                                                      "Vill_Name_2001", "St_Code_2011", "Dst_Code_2011",
+                                                      "SubDist_Code_2011", "Vill_Code_2011", 
+                                                      "Vill_Name_2011"),
+                                        colClasses = c('character','character',
+                                                       'character','character',
+                                                       'factor','character','character',
+                                                       'character','character', 'factor')# New column names
+                                        #stringsAsFactors = TRUE
+                                        ))
+
+#save CSV
+write.csv(census_code_combined, "Census-2001-2011-Codes-Combined.csv")
+
+```

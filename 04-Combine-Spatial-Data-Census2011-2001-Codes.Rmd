@@ -1,0 +1,215 @@
+---
+title: "People-centric restoration: Merging avaiable census village level spatial data with Census 2011 and 2001 codes for data matching"
+author: "Pooja Choksi"
+date: '2022-06-07'
+output: html_document
+---
+
+DATA PREPARATION TO COMBINE SPATIAL AND LAND USE DATA
+
+```{r setup, include=FALSE}
+
+library(data.table)
+library(dplyr)
+library(tidyr)
+library(sf)
+library(rgdal)
+library(tools)
+library(sp)
+```
+
+In this chunk of code, we combine spatial data from WRIS and census2011 and 2001 codes. We do this becauase spatial data has 2001 codes and land use data is 2011 codes.
+
+Spatial data source: SEDAC (https://sedac.ciesin.columbia.edu/data/set/india-india-village-level-geospatial-socio-econ-1991-2001/data-download)
+
+
+```{r message = FALSE, warning= FALSE, include=TRUE, echo=FALSE}
+
+#Load all the data
+setwd("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-Original-BOundaries-From-Benjamin-data")
+
+pathname = "C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-Original-BOundaries-From-Benjamin-data"
+
+allstates <-list.files(pathname,pattern = "Census2011-Original-Boundaries.shp")
+
+for (i in 1:length(allstates)) {
+  varName <- paste0(basename(allstates)[i])
+  assign(varName, readOGR(dsn = allstates[i]))
+}
+
+#Census codes include codes for State, dist, subdist, village for 2001 and 2011
+#by merging the 2001 codes, we assign the 2011 codes to all the spatial files 
+
+census_code_combined <- read.csv("C:\\Users\\pooja\\Documents\\global-restoration-potential-working-folder\\Census-2001-2011-Codes-Combined.csv", 
+                                 header = T, stringsAsFactors = FALSE,
+                                 quote = '\"', colClasses = c('character','character', 'character',
+                                                              'character', 'character', 
+                                                              'factor','character', 'character',
+                                                              'character', 'character', 
+                                                              'factor' ))
+
+```
+
+In this chunk of code, we combine the spatial data and the census codes, so that we can eventually combine the land use data to the spatial files. We merge each state separately, instead of automating the process due to small differences in 'vill_code' in each of the state spatial files.
+
+```{r message = FALSE, warning= FALSE, include=TRUE, echo=FALSE}
+
+#2001 census codes are the same for all the states. This is because they used chronological numbers instead of the st, dist, subdist code
+
+#1. AndhraPradesh
+Andra_Pradesh <- sp::merge(`Andhra-Pradesh-Census2011-Original-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                    by.y = c("St_Code_2001","Vill_Code_2001", 
+                             "Dst_Code_2001", "SubDist_Code_2001"),
+                    duplicateGeoms = T)
+
+#2. Assam
+Assam <- sp::merge(`Assam-Census2011-Original-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                           by.y = c("St_Code_2001","Vill_Code_2001", 
+                                    "Dst_Code_2001", "SubDist_Code_2001"),
+                           duplicateGeoms = T)
+
+#3. Bihar 
+Bihar <- sp::merge(`Bihar-Census2011-Original-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                   by.y = c("St_Code_2001","Vill_Code_2001", 
+                            "Dst_Code_2001", "SubDist_Code_2001"),
+                   duplicateGeoms = T)
+
+#4. Gujarat
+Gujarat <- sp::merge(`Gujarat-Census2011-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                     by.y = c("St_Code_2001","Vill_Code_2001", 
+                              "Dst_Code_2001", "SubDist_Code_2001"),
+                     duplicateGeoms = T)
+
+#5. Haryana
+Haryana <- sp::merge(`Haryana-Census2011-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                     by.y = c("St_Code_2001","Vill_Code_2001", 
+                              "Dst_Code_2001", "SubDist_Code_2001"),
+                     duplicateGeoms = T)
+
+#6. Himachal Pradesh
+Himachal_Pradesh <- sp::merge(`Himachal-Pradesh-Census2011-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                                      by.y = c("St_Code_2001","Vill_Code_2001", 
+                                               "Dst_Code_2001", "SubDist_Code_2001"),
+                                      duplicateGeoms = T)
+
+#7. Jammu- Kashmir
+Jammu_Kashmir<- sp::merge(`Jammu-Kashmir-Census2011-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                       by.y = c("St_Code_2001","Vill_Code_2001", 
+                                "Dst_Code_2001", "SubDist_Code_2001"),
+                       duplicateGeoms = T)
+
+#8. Jharkhand
+Jharkhand<- sp::merge(`Jharkhand-Census2011-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                      by.y = c("St_Code_2001","Vill_Code_2001", 
+                               "Dst_Code_2001", "SubDist_Code_2001"),
+                      duplicateGeoms = T)
+
+#9 Karnataka
+Karnataka<-  sp::merge(`Karnataka-Census2011-Original-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                    by.y = c("St_Code_2001","Vill_Code_2001", 
+                             "Dst_Code_2001", "SubDist_Code_2001"),
+                    duplicateGeoms = T)
+
+#10. Kerala
+Kerala <-  sp::merge(`Kerala-Census2011-Original-BOundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                     by.y = c("St_Code_2001","Vill_Code_2001", 
+                              "Dst_Code_2001", "SubDist_Code_2001"),
+                     duplicateGeoms = T)
+
+#11. Odisha
+Odisha <-  sp::merge(`Odisha-Census2011-Original-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                     by.y = c("St_Code_2001","Vill_Code_2001", 
+                              "Dst_Code_2001", "SubDist_Code_2001"),
+                     duplicateGeoms = T)
+
+#12. Punjab
+Punjab <-  sp::merge(`Punjab-Census2011-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                     by.y = c("St_Code_2001","Vill_Code_2001", 
+                              "Dst_Code_2001", "SubDist_Code_2001"),
+                     duplicateGeoms = T)
+
+#13. Rajasthan
+Rajashthan <-  sp::merge(`Rajasthan-Census2011-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                         by.y = c("St_Code_2001","Vill_Code_2001", 
+                                  "Dst_Code_2001", "SubDist_Code_2001"),
+                         duplicateGeoms = T)
+
+#14. Sikkim
+Sikkim <- sp::merge(`Sikkim-Census2011-Original-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                            by.y = c("St_Code_2001","Vill_Code_2001", 
+                                     "Dst_Code_2001", "SubDist_Code_2001"),
+                            duplicateGeoms = T)
+
+#15. Tamil Nadu
+Tamil_Nadu <- sp::merge(`Tamil-Nadu-Census2011-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                                by.y = c("St_Code_2001","Vill_Code_2001", 
+                                         "Dst_Code_2001", "SubDist_Code_2001"),
+                                duplicateGeoms = T)
+
+#17 Telangana
+Telangana <- sp::merge(`Telangana-Census2011-Original-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                     by.y = c("St_Code_2001","Vill_Code_2001", 
+                              "Dst_Code_2001", "SubDist_Code_2001"),
+                     duplicateGeoms = T)
+
+#18. Tripura
+Tripura <- sp::merge(`Tripura-Census2011-Original-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                             by.y = c("St_Code_2001","Vill_Code_2001", 
+                                      "Dst_Code_2001", "SubDist_Code_2001"),
+                             duplicateGeoms = T)
+
+#19. Uttar Pradesh 
+Uttar_Pradesh <- sp::merge(`Uttar-Pradesh-Census2011-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                                   by.y = c("St_Code_2001","Vill_Code_2001", 
+                                            "Dst_Code_2001", "SubDist_Code_2001"),
+                                   duplicateGeoms = T)
+
+#20. Uttarakhand
+Uttarakhand <- sp::merge(`Uttarakhand-Census2011-Original-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                                 by.y = c("St_Code_2001","Vill_Code_2001", 
+                                          "Dst_Code_2001", "SubDist_Code_2001"),
+                                 duplicateGeoms = T)
+
+#21 West Bengal 
+West_Bengal <- sp::merge(`West-Bengal-Census2011-Boundaries.shp`, census_code_combined, by.x = c("sid","vill_code", "did", "tid"), 
+                                 by.y = c("St_Code_2001","Vill_Code_2001", 
+                                          "Dst_Code_2001", "SubDist_Code_2001"),
+                                 duplicateGeoms = T)
+
+#22 Maharashtra
+#23 Madhya Pradesh 
+#24 Chhatisgarh had files with 2011 census codes already.
+#so no need to combine spatial data with directory info
+
+#25. Manipur
+Manipur_spatial = readOGR("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-Original-BOundaries-From-Benjamin-data\\Manipur-Census2001-Original-Boundaries.shp")
+
+Manipur_spatial <- sp::merge(Manipur_spatial, census_code_combined, by.x = c("SID","VILL_CODE", "DID", "TID"), by.y = c("St_Code_2001","Vill_Code_2001", "Dst_Code_2001", "SubDist_Code_2001"),duplicateGeoms = T)
+
+#Save every state as a separate shapefile
+writeOGR(obj = Andra_Pradesh, layer = "Andra_Pradesh", dsn= "Andhra-Pradesh-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Assam, layer = "Assam", dsn= "Assam-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Bihar, layer = "Bihar", dsn= "Bihar-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Gujarat, layer = "Gujarat", dsn= "Gujarat-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Haryana, layer = "Haryana", dsn= "Haryana-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Himachal_Pradesh, layer = "Himachal_Pradesh", dsn= "Himachal-Pradesh-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Jammu_Kashmir, layer = "Jammu_Kashmir", dsn= "Jammu-Kashmir-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Jharkhand, layer = "Jharkhand", dsn= "Jharkhand-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Karnataka, layer = "Karnataka", dsn= "Karnataka-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Kerala, layer = "Kerala", dsn= "Kerala-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Odisha, layer = "Odisha", dsn= "Odisha-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Punjab, layer = "Punjab", dsn= "Punjab-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Rajashthan, layer = "Rajashthan", dsn= "Rajasthan-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Sikkim, layer = "Sikkim", dsn= "Sikkim-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Tamil_Nadu, layer = "Tamil_Nadu", dsn= "Tamil-Nadu-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Tripura, layer = "Tripura", dsn= "Tripura-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Telangana, layer = "Telangana", dsn= "Telangana-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Uttar_Pradesh, layer = "Uttar_Pradesh", dsn= "Uttar-Pradesh-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Uttarakhand, layer = "Uttarakhand", dsn= "Uttarakhand-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = West_Bengal, layer = "West_Bengal", dsn= "West_Bengal-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+writeOGR(obj = Manipur_spatial, layer = "Manipur_spatial", dsn= "Manipur-Census2011-Codes-Boundaries.shp", driver = "ESRI Shapefile")
+
+
+
+
+```
