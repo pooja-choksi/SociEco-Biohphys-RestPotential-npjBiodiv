@@ -30,18 +30,6 @@ In the following chunk of code, we plot the total population and cumulative popu
 #Read in land use data
 dat.summary = read.csv("All-State-LandUse-Combined.csv")
 
-#In this dataset the newly created state Telangana 
-dat.summary$State[which(dat.summary$District_Name == c("Adilabad", 
-                                                       "Karimnagar",
-                                                       "Khammam",
-                                                       "Mahbubnagar",
-                                                       "Medak",
-                                                       "Nalgonda",
-                                                       "Nizamabad",
-                                                       "Rangareddy",
-                                                       "Warangal"))] <- "Telangana"
-
-
 #State total stacked area plot
 state_summary = dat.summary%>%group_by(State)%>%summarise_at(.vars =
 vars(Total_Indiv, Total_Common, Total_Forest, Total_Unaccounted,Total_Population),
@@ -278,17 +266,65 @@ options(scipen = 999)
 
 ```
 
-Plot all variables of interest in one plot 
+(3) CLIMATE VULNERABILITY 
+```{r message=FALSE, warning=FALSE, include= TRUE}
+
+vulnerability = read.csv("CEEW_climate_vulnerability.csv")
+
+#Like the mpi districts, change the name of districts for vulnerability data too 
+#Recode district names to match dat.summary 
+vulnerability = vulnerability%>%dplyr::mutate(District = recode(District, 
+                                                     "Uttar Bastar Kanker" = "Uttar_Bastar_Kanker",
+                                                     "Janjgir - Champa" = "Janjgir_Champa",
+                                                         "Kabirdham" = "Kabeerdham",
+                                                         "Korea (Koriya)" = "Koriya",
+                                                         "North East" = "North_East",
+                                                     "North West" = "North_West",
+                                                     "South West" = "South_West",
+                                                     "Panchmahal" = "Panch Mahals",
+                                                     "Sabarkantha" = "Sabar Kantha",
+                                                     "Banaskantha" = "Banas Kantha",
+                                                     "Leh" = "Leh(Ladakh)",
+                                                         "Lahul And Spiti" = "Lahul & Spiti",
+                                                     "Pashchimi Singhbhum" = "Pashchimi_Singhbhum",
+                                                     "Purbi Singhbhum"= "Purbi_Singhbhum", 
+                                                     "Saraikela Kharsawan" = "Saraikela_Kharsawan", 
+"Dhar" = "Dhar ", 
+"North  District"= "North District",
+"The Nilgiris" = "The_Nilgiris", 
+"Kanshiram Nagar" = "Kanshiram_Nagar",
+"Sant Kabir Nagar" = "Sant_Kabir_Nagar",
+"Sant Ravidas Nagar (Bhadohi)" = "Sant_Ravidas_Nagar_(Bhadohi)",
+"Siddharth Nagar" = "Siddharthnagar",
+"Tehri Garhwal" = "Tehri_Garhwal",
+"Udham Singh Nagar" = "Udham_Singh_Nagar",
+"Dakshin Dinajpur" = "Dakshin_Dinajpur", 
+"Koch Bihar" = "Koch_Bihar ",
+"North Twenty Four Parganas" = "North_Twenty_Four_Parganas",
+"Paschim Medinipur" = "Paschim_Medinipur",
+"Purba Medinipur" = "Purba_Medinipur", 
+"South Twenty Four Parganas" = "South_Twenty_Four_Parganas", 
+"Uttar Dinajpur" = "Uttar_Dinajpur"))
+
+#combine this climate vulnerability data with the district summary created in previous chunk of code on line 234
+district_mpi_climate_summary = merge(mpi_district_summary, vulnerability[c("District", "Event", "Exposure", "Sensitivity", "Adaptive.Capacity", "Vulnerability.Index")], by.x = c("District_Name"), by.y= c("District"))
+
+#check for duplicates
+duplicates = district_climate[duplicated(district_climate$District_Name), ]
+
+```
+
+Plot all variables of interest (1,2,3) in one plot 
 
 ```{r message= FALSE, warning=FALSE, include =TRUE}
 
-grid.arrange(population_max, mpi_max, nrow = 2)
+grid.arrange(population_max, mpi_max, nrow = 3)
 
 ```
 
 (4) TOTAL HECTARES AVAILABLE FOR RESTORATION (as per land tenure):
 
-In the following chunk of code, we plot the total population and cumulative hectares availabel for restoration at a district and state level.
+In the following chunk of code, we plot the total population and cumulative hectares available for restoration at a district and state level.
 
 ```{r message = FALSE, warning = FALSE, include = TRUE}
 
@@ -354,14 +390,13 @@ This analysis is carried out at the state level.
 
 #create a district summary
 #District summary of variables of interest
-district_summary_2 = dat.summary%>%group_by(District_Name, State)%>%summarise_at(.vars =vars(Total_Indiv, Total_Common, Total_Forest, Total_Unaccounted, Total_Population, Total_area_in_hectares),
+district_summary_2 = dat.summary%>%dplyr::group_by(District_Name, State)%>%summarise_at(.vars =vars(Total_Indiv, Total_Common, Total_Forest, Total_Unaccounted, Total_Population, Total_area_in_hectares),
 .funs =c(sum = "sum"))
 
 #Combine this table with the mpi table
 mpi_district_summary_2 = merge(district_summary_2, mpi_district[c("District", "State", "MPI_District", "Number_of_MPI_PeopleDistrict")], by.x = c("State", "District_Name"), by.y= c("State", "District"))
 
 #make the table long
-
 #reshape data for plotting
 mpi_district_summary_2_long = reshape(mpi_district_summary_2, direction='long',
         varying=c('Total_Indiv_sum', 'Total_Common_sum', 'Total_Forest_sum', 'Total_Unaccounted_sum'),
@@ -414,9 +449,6 @@ tenure_indiv_plot = tenure_Individual%>%
   #scale_fill_manual(labels = c("Common land", "Forest land", "Individual land", "Unaccounted land"), values=c("#999933","#117733","#E69F00", "#D55E00")) + labs(fill = "Land tenure/cover", x = "State/ Union Territory")
 
 state_total_plot
-
-
-
 
 ```
 
@@ -483,6 +515,7 @@ grid.arrange(forest_tradeoff_2, common_tradeoff_2, individual_tradeoff_2, nrow= 
 ```
 
 
+SUPPLEMENTARY INFORMATION: 
 Plot the proportion of land tenure (in hectares) in each state ordered by total population in each state.
 
 ```{r message = FALSE, warning= FALSE, include = TRUE}
@@ -542,45 +575,3 @@ state_prop_plot
 
 
 ```
-
-UNUSED CODE 
-
-#district level population figure
-district_summary = dat.summary%>%group_by(District_Name,State)%>%summarise_at(.vars =
-vars(Total_Indiv, Total_Common, Total_Forest, Total_Unaccounted,Total_Population),
-.funs =c(sum = "sum"))
-
-#rearrange tenure common in descending order
-district_summary <- district_summary[order(district_summary$Total_Population_sum, decreasing=TRUE),]
-
-#add cumulative column to the data frame
-district_summary[,"cum_indiv_hectares"] <- cumsum(district_summary$Total_Indiv_sum)
-district_summary[,"cum_common_hectares"] <- cumsum(district_summary$Total_Common_sum)
-district_summary[,"cum_forest_hectares"] <- cumsum(district_summary$Total_Forest_sum)
-district_summary[,"cum_unaccounted_hectares"] <- cumsum(district_summary$Total_Unaccounted_sum)
-district_summary[,"cum_total_population"] <- cumsum(district_summary$Total_Population_sum)
-
-#plot in descending order#assign order to prop variable
-prop_order <-
-  district_summary %>%
-  arrange(desc(Total_Population_sum)) %>%
-  mutate(District_Name = factor(District_Name))
-
-prop_order$District_Name_2 <- factor(prop_order$District_Name, levels=unique(prop_order$District_Name))
-#plot decreasing pop and cumulative hectares 
-scaleRight = 5
-
-population_max  = district_summary%>%mutate(District_Name = factor(District_Name, levels= prop_order$District_Name_2, ordered =TRUE))%>%ggplot(aes(x = District_Name, y = Total_Population_sum))+ 
-  geom_col(aes(x = District_Name, y = Total_Population_sum, fill = State)) + 
-    geom_line(aes(y= cum_total_population/scaleRight, group = 1)) + 
-  #geom_line(aes(y= cum_indiv_hectares/scaleRight), group = 1, color = "#E69F00", size = 1.2)+ 
-  geom_point(aes(y= cum_indiv_hectares/scaleRight), group = 1, color = "#E69F00")+ 
-  geom_line(aes(y= cum_common_hectares/scaleRight), group = 1, color = "#999933", size = 1.2)+ 
-  geom_point(aes(y= cum_common_hectares/scaleRight), group = 1, color = "#999933")+ 
-  geom_line(aes(y= cum_forest_hectares/scaleRight), group = 1, color = "#117733", size = 1.2)+ 
-  geom_point(aes(y= cum_forest_hectares/scaleRight), group = 1, color = "#117733")+
-  scale_y_continuous(name = "Total Population", sec.axis = sec_axis(~.*scaleRight, name="Total Hectares"))+
-  theme_classic()+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-population_max
-
