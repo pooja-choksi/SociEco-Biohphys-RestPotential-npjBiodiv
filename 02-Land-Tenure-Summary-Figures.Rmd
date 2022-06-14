@@ -219,7 +219,8 @@ conflict_obs = mpi_district[!mpi_district$District %in% mpi_dat.summary$District
 ```{r message = FALSE, warning=FALSE, include = TRUE}
 
 #District summary of variables of interest
-district_summary = dat.summary%>%group_by(District_Name, State)%>%summarise_at(.vars =vars(Total_Indiv, Total_Common, Total_Forest, Total_Unaccounted),
+district_summary = dat.summary%>%group_by(District_Name, State)%>%summarise_at(.vars =vars(Total_Indiv, Total_Common, Total_Forest, Total_Unaccounted, Total_Population,
+Total_hectares_for_prop),
 .funs =c(sum = "sum"))
 
 #Combine this table with the mpi table
@@ -229,7 +230,7 @@ mpi_district_summary = merge(district_summary, mpi_district[c("District", "State
 mpi_state_summary = mpi_district_summary%>%group_by(State)%>%mutate(
   Total_mpi_poor = sum(Number_of_MPI_PeopleDistrict))
   
-mpi_state_summary = mpi_state_summary%>%group_by(State, Total_mpi_poor)%>%summarise_at(.vars =vars(Total_Indiv_sum, Total_Common_sum, Total_Forest_sum, Total_Unaccounted_sum), .funs =c(sum = "sum"))
+mpi_state_summary = mpi_state_summary%>%group_by(State, Total_mpi_poor)%>%summarise_at(.vars =vars(Total_Indiv_sum, Total_Common_sum, Total_Forest_sum, Total_Unaccounted_sum, Total_Population_sum), .funs =c(sum = "sum"))
 
 #rearrange tenure common in descending order
 mpi_state_summary <- mpi_state_summary[order(mpi_state_summary$Total_mpi_poor , decreasing=TRUE),]
@@ -309,8 +310,36 @@ vulnerability = vulnerability%>%dplyr::mutate(District = recode(District,
 #combine this climate vulnerability data with the district summary created in previous chunk of code on line 234
 district_mpi_climate_summary = merge(mpi_district_summary, vulnerability[c("District", "Event", "Exposure", "Sensitivity", "Adaptive.Capacity", "Vulnerability.Index")], by.x = c("District_Name"), by.y= c("District"))
 
-#check for duplicates
-duplicates = district_climate[duplicated(district_climate$District_Name), ]
+#creating a weighted average for number of people in climate vulnerbility in each district
+district_mpi_climate_summary = district_mpi_climate_summary%>%mutate(climate_vulnerable_weighted = Vulnerability.Index*Total_Population_sum)
+
+#Aggregate to state 
+mpi_climate_state_summary = district_mpi_climate_summary%>%group_by(State)%>%summarise_at(.vars =vars(Total_Indiv_sum, Total_Common_sum, Total_Forest_sum, Total_Unaccounted_sum, Total_Population_sum, Total_hectares_for_prop_sum, climate_vulnerable_weighted), .funs =c(sum = "sum"))
+
+
+#rearrange dataset in population descending order
+mpi_climate_state_summary <- mpi_climate_state_summary[order(mpi_climate_state_summary$climate_vulnerable_weighted_sum, decreasing=TRUE),]
+
+mpi_climate_state_summary[,"cum_vulnerable"] <- cumsum(mpi_climate_state_summary$climate_vulnerable_weighted_sum)
+
+#plot in descending order#assign order to prop variable
+prop_order <-
+  mpi_climate_state_summary %>%
+  arrange(desc(climate_vulnerable_weighted_sum)) %>%
+  mutate(State = factor(State))
+
+#plot decreasing pop and cumulative hectares 
+scaleRight =5
+
+vulnerable_max  = mpi_climate_state_summary%>%mutate(State = factor(State, levels= prop_order$State, ordered =TRUE))%>%
+  ggplot(aes(x = State, y = climate_vulnerable_weighted_sum))+ 
+  geom_col(aes(x = State, y = climate_vulnerable_weighted_sum), fill = "#D3D3D3") + 
+  geom_line(aes(y= cum_vulnerable/scaleRight), group = 1, color = "black", size = 1.2)+ scale_y_continuous(name = "Climate Vulnerable Population (in Millions)", sec.axis = sec_axis(~.*scaleRight, name="Cumulative Climate Vulnerable Population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)), labels = scales::label_number(unit = "M", scale = 1e-6))+
+  theme_classic()+ theme(axis.title = element_text(size = 8), axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+
+vulnerable_max
+
+
 
 ```
 
@@ -318,7 +347,7 @@ Plot all variables of interest (1,2,3) in one plot
 
 ```{r message= FALSE, warning=FALSE, include =TRUE}
 
-grid.arrange(population_max, mpi_max, nrow = 3)
+grid.arrange(population_max, mpi_max, vulnerable_max, nrow = 3)
 
 ```
 
@@ -457,6 +486,7 @@ state_total_plot
 What are the synergies and trade-offs between socio-economic and climate vulnerability factors when planning restoration according to land tenure regimes or according to total area available?
 
 This analysis is dome at a district level.
+(1) MULTIDIMENSIONAL POVERTY INDEX
 
 ```{r message= FALSE, warning=FALSE, include=TRUE}
 
@@ -514,6 +544,24 @@ grid.arrange(forest_tradeoff_2, common_tradeoff_2, individual_tradeoff_2, nrow= 
 
 ```
 
+(2) CLIMATE VULNERABILITY
+```{r message=FALSE, warning=FALSE, include=TRUE}
+
+#make the table long
+#reshape data for plotting
+district_mpi_climate_summary_long = reshape(district_mpi_climate_summary, direction='long',
+        varying=c('Total_Indiv_sum', 'Total_Common_sum', 'Total_Forest_sum', 'Total_Unaccounted_sum'),
+        timevar= 'Land_Tenure',
+       times=c('Individual', 'Common_NonForest', 'Forest', 'Unaccounted'),
+        v.names= 'Total_Hectares',
+        idvar=c('State', 'Total_Population_sum', 
+                "Total_hectares_for_prop_sum", "MPI_District",
+                "Number_of_MPI_PeopleDistrict", "Event",
+                "Exposure", "Sensitivity", "Adaptive.Capacity",
+                "Vulnerability.Index", "climate_vulnerable_weighted"))
+
+
+```
 
 SUPPLEMENTARY INFORMATION: 
 Plot the proportion of land tenure (in hectares) in each state ordered by total population in each state.
