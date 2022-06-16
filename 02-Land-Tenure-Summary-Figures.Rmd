@@ -12,6 +12,9 @@ library(dplyr)
 library(qcc)
 library(gridExtra)
 
+#get color blind friendly colors 
+library(pals)
+
 ```
 
 PEOPLE-CENTRIC RESTORATION: MAXIMISING HUMAN DEVELOPMENT AND ADDRESSING VULNERABILITY
@@ -21,15 +24,57 @@ Where are the districts which would provide the maximum benefit when considering
 
 Working on the assumption that ecological restoration is beneficial for natural resources dependent livelihoods, we quantify people-centric restoration potential of different land tenure regimes and states to meet human development needs, using public land use data. 
 
+```{r message= FALSE, warning= FALSE, include=TRUE}
+
+#Read in land use data which is used for all the plots
+
+dat.summary = read.csv("All-State-LandUse-Combined.csv")
+
+```
+
 (1) TOTAL POPULATION:
 
 In the following chunk of code, we plot the total population and cumulative population at a district and state level.
 
 ```{r message= FALSE, warning= FALSE, include=TRUE}
 
-#Read in land use data
-dat.summary = read.csv("All-State-LandUse-Combined.csv")
+##DISTRICT LEVEL PLOT
 
+#District summary of variables of interest
+district_tot_pop = dat.summary%>%group_by(District_Name, State)%>%summarise_at(.vars =vars(Total_Indiv, Total_Common, Total_Forest, Total_Unaccounted, Total_Population,
+Total_hectares_for_prop),
+.funs =c(sum = "sum"))
+
+#rearrange tenure common in descending order
+district_tot_pop <- district_tot_pop[order(district_tot_pop$Total_Population_sum, decreasing=TRUE),]
+
+#add cumulative column to the data frame
+district_tot_pop[,"cum_tot_pop"] <- cumsum(district_tot_pop$Total_Population_sum)
+
+#find duplicate district names
+duplicated_districts = district_tot_pop[duplicated(district_tot_pop$District_Name), ]
+
+#rename the duplicate districts to be able to plot in descending 
+district_tot_pop = district_tot_pop%>%mutate(District_Name = case_when(District_Name == "Aurangabad" & State == "Bihar" ~ "Aurangabad_2", District_Name == "Bijapur" & State == "Karnataka" ~ "Bijapur_2", District_Name == "Bilaspur" & State == "Himachal Pradesh" ~ "Bilaspur_2", District_Name == "Hamirpur" & State== "Himachal Pradesh"~ "Hamirpur_2", District_Name == "Pratapgarh" & State == "Rajasthan" ~ "Pratapgarh_2", District_Name== "Raigarh" & State == "Maharashtra" ~ "Raigarh_2", District_Name == "Ranchi" & State == "Madhya Pradesh" ~ "Ranchi_2", TRUE ~ District_Name))
+
+#plot in descending order#assign order to prop variable
+prop_order <-
+  district_tot_pop %>%
+  arrange(desc(Total_Population_sum)) %>%
+  mutate(District_Name = factor(District_Name))
+
+scaleRight = 100
+
+tot_pop_district_max  = district_tot_pop%>%mutate(District_Name = factor(District_Name, levels= unique(prop_order$District_Name), ordered =TRUE))%>%
+  ggplot(aes(x = District_Name))+ 
+  geom_col(aes(x = District_Name, y = Total_Population_sum, fill = State)) + 
+  geom_line(aes(y= cum_tot_pop/scaleRight), group = 1, color = "black", size = 1.2)+
+  scale_fill_manual(values = c("#e76eaa", "#67be40", "#9455cd", "#aab539", "#5b70dd", "#d2a035", "#c13fa6", "#4fc271", "#d33680", "#4e8f2e", "#d27cde", "#41844a", "#dc375f", "#5dc3a3", "#b82d24", "#4ab4dd", "#e55744", "#517dc0", "#e37733", "#7956a3", "#9db269", "#a7487a", "#2e8871", "#cc5967", "#677328", "#a798e0", "#8c6d2c", "#db8ebb", "#a6572c", "#91567c", "#d79f66", "#9f494f", "#e3867c"))+ scale_y_continuous(name = "Multidimensionally Poor Population (in Millions)", sec.axis = sec_axis(~.*scaleRight, name="Cumulative Multidimensionally Poor Population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)), labels = scales::label_number(unit = "M", scale = 1e-6))+
+  theme_classic()+ theme(axis.title = element_text(size = 8), axis.text.x = element_blank(), axis.ticks.x = element_blank()) +theme(legend.position = "bottom")
+
+tot_pop_district_max
+
+##STATE LEVEL PLOT
 #State total stacked area plot
 state_summary = dat.summary%>%group_by(State)%>%summarise_at(.vars =
 vars(Total_Indiv, Total_Common, Total_Forest, Total_Unaccounted,Total_Population),
@@ -136,11 +181,8 @@ unique(Madhya_Pradesh$District_Name)
 Maharashtra = dat.summary%>%filter(State == "Maharashtra")
 unique(Maharashtra$District_Name)
 
-Manipur = dat.summary%>%filter(State == "Manipur")
-unique(Manipur$District_Name)
-
 Meghalaya = dat.summary%>%filter(State == "Meghalaya")
-unique(Manipur$District_Name)
+unique(Meghalaya$District_Name)
 
 Manipur = dat.summary%>%filter(State == "Manipur")
 unique(Manipur$District_Name)
@@ -171,6 +213,12 @@ unique(west_bengal$District_Name)
 
 andhra = dat.summary%>%filter(State == "Andhra Pradesh")
 unique(andhra$District_Name)
+
+andaman = dat.summary%>%filter(State == "Andaman Nicobar UT")
+unique(andaman$District_Name)
+
+mp = dat.summary%>%filter(State == "Madhya Pradesh")
+unique(mp$District_Name)
 
 #Recode district names to match dat.summary 
 mpi_district = mpi_district%>%dplyr::mutate(District = recode(District, 
@@ -212,9 +260,11 @@ mpi_dat.summary = merge(dat.summary, mpi_district[c("District", "State", "MPI_Di
 #find the districts with no match between mpi and dat.summary 
 conflict_obs = mpi_district[!mpi_district$District %in% mpi_dat.summary$District_Name, ]
 
-#the 38 conflict obs that remain are only metropolitan areas/ towns (with no land use data), other districts (e.g.: Arunachal Pradesh) with no land use data available from census 2011 records and one new district in UP (Basti) for which there is no land use data. 
+#the 42 conflict obs that remain are only metropolitan areas/ towns (with no land use data), other districts (e.g.: Arunachal Pradesh) with no land use data available from census 2011 records and one new district in UP (Basti) for which there is no land use data. 
 
 ```
+
+Total N = 594 districts
 
 ```{r message = FALSE, warning=FALSE, include = TRUE}
 
@@ -226,6 +276,38 @@ Total_hectares_for_prop),
 #Combine this table with the mpi table
 mpi_district_summary = merge(district_summary, mpi_district[c("District", "State", "MPI_District", "Number_of_MPI_PeopleDistrict")], by.x = c("State", "District_Name"), by.y= c("State", "District"))
 
+#rearrange tenure common in descending order
+mpi_district_summary <- mpi_district_summary[order(mpi_district_summary$Number_of_MPI_PeopleDistrict, decreasing=TRUE),]
+
+#add cumulative column to the data frame
+mpi_district_summary[,"cum_mpi_poor"] <- cumsum(mpi_district_summary$Number_of_MPI_PeopleDistrict)
+
+#find duplicate district names
+duplicated_districts = mpi_district_summary[duplicated(mpi_district_summary$District_Name), ]
+
+#rename the duplicate districts to be able to plot in descending 
+mpi_district_summary = mpi_district_summary%>%mutate(District_Name = case_when(District_Name == "Aurangabad" & State == "Bihar" ~ "Aurangabad_2", District_Name == "Bijapur" & State == "Karnataka" ~ "Bijapur_2", District_Name == "Bilaspur" & State == "Himachal Pradesh" ~ "Bilaspur_2", District_Name == "Hamirpur" & State== "Himachal Pradesh"~ "Hamirpur_2", District_Name == "Pratapgarh" & State == "Rajasthan" ~ "Pratapgarh_2", District_Name== "Raigarh" & State == "Maharashtra" ~ "Raigarh_2", TRUE ~ District_Name))
+
+#plot in descending order#assign order to prop variable
+prop_order <-
+  mpi_district_summary %>%
+  arrange(desc(Number_of_MPI_PeopleDistrict)) %>%
+  mutate(District_Name = factor(District_Name))
+
+##DISTRICT LEVEL PLOT
+scaleRight = 85
+
+mpi_district_max  = mpi_district_summary%>%mutate(District_Name = factor(District_Name, levels= unique(prop_order$District_Name), ordered =TRUE))%>%
+  ggplot(aes(x = District_Name))+ 
+  geom_col(aes(x = District_Name, y = Number_of_MPI_PeopleDistrict, fill = State)) + 
+  geom_line(aes(y= cum_mpi_poor/scaleRight), group = 1, color = "black", size = 1.2)+
+  scale_fill_manual(values = c("#e76eaa", "#67be40", "#9455cd", "#aab539", "#5b70dd", "#d2a035", "#c13fa6", "#4fc271", "#d33680", "#4e8f2e", "#d27cde", "#41844a", "#dc375f", "#5dc3a3", "#b82d24", "#4ab4dd", "#e55744", "#517dc0", "#e37733", "#7956a3", "#9db269", "#a7487a", "#2e8871", "#cc5967", "#677328", "#a798e0", "#8c6d2c", "#db8ebb", "#a6572c", "#91567c", "#d79f66", "#9f494f", "#e3867c"))+ scale_y_continuous(name = "Multidimensionally Poor Population (in Millions)", sec.axis = sec_axis(~.*scaleRight, name="Cumulative Multidimensionally Poor Population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)), labels = scales::label_number(unit = "M", scale = 1e-6))+
+  theme_classic()+ theme(axis.title = element_text(size = 8), axis.text.x = element_blank(), axis.ticks.x = element_blank()) +theme(legend.position = "bottom")
+
+mpi_district_max
+
+
+##STATE LEVEL PLOT
 #Aggregate to state 
 mpi_state_summary = mpi_district_summary%>%group_by(State)%>%mutate(
   Total_mpi_poor = sum(Number_of_MPI_PeopleDistrict))
@@ -268,6 +350,9 @@ options(scipen = 999)
 ```
 
 (3) CLIMATE VULNERABILITY 
+
+Total N = 448 districts
+
 ```{r message=FALSE, warning=FALSE, include= TRUE}
 
 vulnerability = read.csv("CEEW_climate_vulnerability.csv")
@@ -276,7 +361,7 @@ vulnerability = read.csv("CEEW_climate_vulnerability.csv")
 #Recode district names to match dat.summary 
 vulnerability = vulnerability%>%dplyr::mutate(District = recode(District, 
                                                      "Uttar Bastar Kanker" = "Uttar_Bastar_Kanker",
-                                                     "Janjgir - Champa" = "Janjgir_Champa",
+                                                     "Janjgir-champa" = "Janjgir_Champa",
                                                          "Kabirdham" = "Kabeerdham",
                                                          "Korea (Koriya)" = "Koriya",
                                                          "North East" = "North_East",
@@ -285,11 +370,11 @@ vulnerability = vulnerability%>%dplyr::mutate(District = recode(District,
                                                      "Panchmahal" = "Panch Mahals",
                                                      "Sabarkantha" = "Sabar Kantha",
                                                      "Banaskantha" = "Banas Kantha",
-                                                     "Leh" = "Leh(Ladakh)",
+                                                     "Leh (ladakh)" = "Leh(Ladakh)",
                                                          "Lahul And Spiti" = "Lahul & Spiti",
                                                      "Pashchimi Singhbhum" = "Pashchimi_Singhbhum",
                                                      "Purbi Singhbhum"= "Purbi_Singhbhum", 
-                                                     "Saraikela Kharsawan" = "Saraikela_Kharsawan", 
+                                                     "Saraikela-kharsawan" = "Saraikela_Kharsawan", 
 "Dhar" = "Dhar ", 
 "North  District"= "North District",
 "The Nilgiris" = "The_Nilgiris", 
@@ -301,21 +386,72 @@ vulnerability = vulnerability%>%dplyr::mutate(District = recode(District,
 "Udham Singh Nagar" = "Udham_Singh_Nagar",
 "Dakshin Dinajpur" = "Dakshin_Dinajpur", 
 "Koch Bihar" = "Koch_Bihar ",
-"North Twenty Four Parganas" = "North_Twenty_Four_Parganas",
-"Paschim Medinipur" = "Paschim_Medinipur",
+"North 24 Parganas" = "North_Twenty_Four_Parganas",
+"Pashchim Medinipur" = "Paschim_Medinipur",
 "Purba Medinipur" = "Purba_Medinipur", 
-"South Twenty Four Parganas" = "South_Twenty_Four_Parganas", 
-"Uttar Dinajpur" = "Uttar_Dinajpur"))
+"South 24 Parganas" = "South_Twenty_Four_Parganas", 
+"Uttar Dinajpur" = "Uttar_Dinajpur", 
+"Nagappatinam" = "Nagapattinam",
+"Maharajganj" = "Mahrajganj",
+"Virudunagar" = "Virudhunagar",
+"North (Sikkim)" = "North District",
+"South (Sikkim)" = "South District",
+"Saran(chhapra)" = "Saran",
+"Chamrajnagar" = "Chamarajanagar",
+"Marigaon" = "Morigaon",
+"Sri Potti Sriramulu Nellore Flood. Drought & Cyclone" = "Sri Potti Sriramulu Nellore",
+"Y. S. R." = "Y.S.R.", 
+"Garhchiroli" = "Gadchiroli",
+"North & Middle Andaman Cyclone" = "North & Middle Andaman",
+"East Nimar" = "Khandwa (East Nimar)", 
+"Khamman" = "Khammam"))
 
 #combine this climate vulnerability data with the district summary created in previous chunk of code on line 234
 district_mpi_climate_summary = merge(mpi_district_summary, vulnerability[c("District", "Event", "Exposure", "Sensitivity", "Adaptive.Capacity", "Vulnerability.Index")], by.x = c("District_Name"), by.y= c("District"))
 
+#check missing districts 
+missing = setdiff(vulnerability$District, mpi_district_summary$District_Name)   # elements in first NOT in second
+#there should 15 districts missing. these districts are all urban and do not have land use data from census 2011
+
+#there are 6 duplicate districts names - to remove 
+district_mpi_climate_summary = district_mpi_climate_summary%>%filter(!(District_Name=="Aurangabad" & State == "Bihar"), !(District_Name == "Bijapur" & State == "Chhattisgarh"), !(District_Name == "Bilaspur" & State == "Himachal Pradesh"), !(District_Name == "Hamirpur" & State == "Himachal Pradesh"), !(District_Name == "Pratapgarh" & State == "Uttar Pradesh"), ! (District_Name == "Raigarh" & State == "Maharashtra"))
+
+#Total N = 448 districts
+
 #creating a weighted average for number of people in climate vulnerbility in each district
 district_mpi_climate_summary = district_mpi_climate_summary%>%mutate(climate_vulnerable_weighted = Vulnerability.Index*Total_Population_sum)
 
+#order the table in descending order
+prop_order = district_mpi_climate_summary%>%
+  arrange(desc(climate_vulnerable_weighted))%>%
+  mutate(District_Name = factor(District_Name))
+
+##DISTRICT LEVEL PLOT
+#cumulative number of vulnerable people
+district_mpi_climate_summary
+district_mpi_climate_summary[,"cum_vulnerable"] <- cumsum(district_mpi_climate_summary$climate_vulnerable_weighted)
+
+#colors for states
+labs = c('alphabet', 'alphabet2', 'glasbey', 'kelly', 'polychrome')
+op = par(mar = c(0, 5, 3, 1))
+pal.bands(alphabet(), alphabet2(), glasbey(), kelly(), polychrome(), 
+          labels = labs, show.names = FALSE)
+
+#plot decreasing pop and cumulative hectares 
+scaleRight =70
+
+vulnerable_district_max  = district_mpi_climate_summary%>%mutate(District_Name = factor(District_Name, levels= prop_order$District_Name, ordered =TRUE))%>%
+  ggplot(aes(x = District_Name))+ 
+  geom_col(aes(x = District_Name, y = climate_vulnerable_weighted, fill = State)) + 
+  geom_line(aes(y= cum_vulnerable/scaleRight), group = 1, color = "black", size = 1.2)+
+  scale_fill_manual(values = c("#b296da", "#83b936", "#954ec1", "#52bd58", "#cc48ab", "#3f8645", "#cf7cdf", "#bcae37", "#6471e0", "#db9131", "#625ca5", "#698424", "#d9407f", "#5ac398", "#d03d4c", "#4bc0d8", "#d7502c", "#578dce", "#b35731", "#2e8871", "#9a4c86", "#9eb266", "#de83b2", "#646b2b", "#a54a5c", "#d7a269", "#e4817b", "#936a2e"))+ scale_y_continuous(name = "Climate Vulnerable Population (in Millions)", sec.axis = sec_axis(~.*scaleRight, name="Cumulative Climate Vulnerable Population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)), labels = scales::label_number(unit = "M", scale = 1e-6))+
+  theme_classic()+ theme(axis.title = element_text(size = 8), axis.text.x = element_blank(), axis.ticks.x = element_blank()) +theme(legend.position = "bottom")
+
+vulnerable_district_max
+
+##STATE LEVEL PLOT 
 #Aggregate to state 
 mpi_climate_state_summary = district_mpi_climate_summary%>%group_by(State)%>%summarise_at(.vars =vars(Total_Indiv_sum, Total_Common_sum, Total_Forest_sum, Total_Unaccounted_sum, Total_Population_sum, Total_hectares_for_prop_sum, climate_vulnerable_weighted), .funs =c(sum = "sum"))
-
 
 #rearrange dataset in population descending order
 mpi_climate_state_summary <- mpi_climate_state_summary[order(mpi_climate_state_summary$climate_vulnerable_weighted_sum, decreasing=TRUE),]
@@ -338,8 +474,6 @@ vulnerable_max  = mpi_climate_state_summary%>%mutate(State = factor(State, level
   theme_classic()+ theme(axis.title = element_text(size = 8), axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
 
 vulnerable_max
-
-
 
 ```
 
