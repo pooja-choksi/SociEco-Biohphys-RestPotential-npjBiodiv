@@ -400,7 +400,7 @@ vulnerability = vulnerability%>%dplyr::mutate(District = recode(District,
 "Chamrajnagar" = "Chamarajanagar",
 "Marigaon" = "Morigaon",
 "Sri Potti Sriramulu Nellore Flood. Drought & Cyclone" = "Sri Potti Sriramulu Nellore",
-"Y. S. R." = "Y.S.R.", 
+"Y.s.r." = "Y.S.R.", 
 "Garhchiroli" = "Gadchiroli",
 "North & Middle Andaman Cyclone" = "North & Middle Andaman",
 "East Nimar" = "Khandwa (East Nimar)", 
@@ -413,7 +413,7 @@ district_mpi_climate_summary = merge(mpi_district_summary, vulnerability[c("Dist
 missing = setdiff(vulnerability$District, mpi_district_summary$District_Name)   # elements in first NOT in second
 #there should 15 districts missing. these districts are all urban and do not have land use data from census 2011
 
-#there are 6 duplicate districts names - to remove 
+#there are 6 duplicate districts names with no vulnerability data - to remove 
 district_mpi_climate_summary = district_mpi_climate_summary%>%filter(!(District_Name=="Aurangabad" & State == "Bihar"), !(District_Name == "Bijapur" & State == "Chhattisgarh"), !(District_Name == "Bilaspur" & State == "Himachal Pradesh"), !(District_Name == "Hamirpur" & State == "Himachal Pradesh"), !(District_Name == "Pratapgarh" & State == "Uttar Pradesh"), ! (District_Name == "Raigarh" & State == "Maharashtra"))
 
 #Total N = 448 districts
@@ -614,12 +614,11 @@ tenure_indiv_plot = tenure_Individual%>%
 state_total_plot
 
 ```
-
 ## QUESTION 3:
 
 What are the synergies and trade-offs between socio-economic and climate vulnerability factors when planning restoration according to land tenure regimes or according to total area available?
 
-This analysis is dome at a district level.
+This analysis is done at a district level.
 (1) MULTIDIMENSIONAL POVERTY INDEX
 
 ```{r message= FALSE, warning=FALSE, include=TRUE}
@@ -681,8 +680,9 @@ grid.arrange(forest_tradeoff_2, common_tradeoff_2, individual_tradeoff_2, nrow= 
 (2) CLIMATE VULNERABILITY
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 
+#data prep
 #make the table long
-#reshape data for plotting
+#each of the tenures will become a separate dataset
 district_mpi_climate_summary_long = reshape(district_mpi_climate_summary, direction='long',
         varying=c('Total_Indiv_sum', 'Total_Common_sum', 'Total_Forest_sum', 'Total_Unaccounted_sum'),
         timevar= 'Land_Tenure',
@@ -693,6 +693,111 @@ district_mpi_climate_summary_long = reshape(district_mpi_climate_summary, direct
                 "Number_of_MPI_PeopleDistrict", "Event",
                 "Exposure", "Sensitivity", "Adaptive.Capacity",
                 "Vulnerability.Index", "climate_vulnerable_weighted"))
+
+#create a separate dataframe for each land tenure
+for(i in unique(district_mpi_climate_summary_long$Land_Tenure)) {
+        name <- paste("tenure_climate_", i, sep = "")
+        assign(name, district_mpi_climate_summary_long[district_mpi_climate_summary_long$Land_Tenure==i,])}
+
+#cumulative hectares in each land tenure in descending order
+#individual land
+tenure_climate_Individual <- tenure_climate_Individual[order(tenure_climate_Individual$Total_Hectares, decreasing=TRUE),]
+
+tenure_climate_Individual[,"cum_indiv_hectares"] <- cumsum(tenure_climate_Individual$Total_Hectares)
+
+#common land
+tenure_climate_Common_NonForest <- tenure_climate_Common_NonForest[order(tenure_climate_Common_NonForest$Total_Hectares, decreasing=TRUE),]
+
+tenure_climate_Common_NonForest[,"cum_common_hectares"] <- cumsum(tenure_climate_Common_NonForest$Total_Hectares)
+
+#forest land
+tenure_climate_Forest <- tenure_climate_Forest[order(tenure_climate_Forest$Total_Hectares, decreasing=TRUE),]
+
+tenure_climate_Forest[,"cum_forest_hectares"] <- cumsum(tenure_climate_Forest$Total_Hectares)
+```
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+
+#Tenure 1: Individual land 
+individual_climate_tradeoff_1 = 
+  ggplot(tenure_climate_Individual) + geom_jitter(data= tenure_climate_Individual, aes(x=climate_vulnerable_weighted, y=Total_Population_sum, size=Total_Hectares), color = "#E69F00", alpha= 0.5)+ theme_bw()+
+  scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Climate Vulnerable Population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+   geom_vline(xintercept = 1750000, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
+                                                                         
+individual_climate_tradeoff_1                                                     
+
+#Tenure 1: Individual land 
+individual_climate_tradeoff_2 = 
+  ggplot(tenure_climate_Individual) + geom_jitter(data= tenure_climate_Individual, aes(x=Vulnerability.Index, y=Total_Population_sum, size=Total_Hectares), color = "#E69F00", alpha= 0.5)+ theme_bw()+
+  scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Climate Vulnerability Index")+ 
+   geom_vline(xintercept = 0.5, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
+
+individual_climate_tradeoff_2
+
+#Tenure 2: Common land 
+common_climate_tradeoff_1 = 
+  ggplot(tenure_climate_Common_NonForest) + geom_jitter(data= tenure_climate_Common_NonForest, aes(x=climate_vulnerable_weighted, y=Total_Population_sum, size=Total_Hectares), color = "#999933", alpha= 0.5)+ theme_bw()+
+  scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Climate Vulnerable Population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+   geom_vline(xintercept = 1750000, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
+                                                                         
+common_climate_tradeoff_1
+
+#Tenure 2: Common land 
+common_climate_tradeoff_2 = 
+  ggplot(tenure_climate_Common_NonForest) + geom_jitter(data= tenure_climate_Common_NonForest, aes(x=Vulnerability.Index, y=Total_Population_sum, size=Total_Hectares), color = "#999933", alpha= 0.5)+ theme_bw()+
+  scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Climate Vulnerability Index")+ 
+  geom_vline(xintercept = 0.5, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
+                                                                         
+common_climate_tradeoff_2                                                        
+
+#Tenure 3: Forest land 
+forest_climate_tradeoff_1 = 
+  ggplot(tenure_climate_Forest) + geom_jitter(data= tenure_climate_Forest, aes(x=climate_vulnerable_weighted, y=Total_Population_sum, size=Total_Hectares), color = "#117733", alpha= 0.5)+ theme_bw()+
+  scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Climate vulnerable population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+   geom_vline(xintercept = 1750000, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
+
+forest_climate_tradeoff_1
+
+forest_climate_tradeoff_2 = 
+  ggplot(tenure_climate_Forest) + geom_jitter(data= tenure_climate_Forest, aes(x=Vulnerability.Index, y=Total_Population_sum, size=Total_Hectares), color = "#117733", alpha= 0.5)+ theme_bw()+
+  scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Climate vulnerability index")+  
+  geom_vline(xintercept = 0.5, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
+
+forest_climate_tradeoff_2
+
+grid.arrange(forest_climate_tradeoff_1, common_climate_tradeoff_1, individual_climate_tradeoff_1, nrow= 3)
+
+grid.arrange(forest_climate_tradeoff_2, common_climate_tradeoff_2, individual_climate_tradeoff_2, nrow= 3)
+
+```
+
+## ALTERNATIVE PLOT
+
+Combine all four factors - MPI, Climate vulnerability index, Total population and total hectares in each land tenure in one plot.
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+
+#Tenure 1: Individual land
+individual_climate_mpi = 
+  ggplot(tenure_climate_Individual) + geom_jitter(data= tenure_climate_Individual, aes(x=MPI_District, y=Total_Population_sum, size=Total_Hectares, color = Vulnerability.Index), alpha= 0.5)+ theme_bw()+scale_color_viridis(option = "D")+
+  scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Multidimensional Poverty Index")+ 
+   geom_vline(xintercept = 0.2, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
+
+individual_climate_mpi
+
+
+#Tenure 2: Common land
+common_climate_mpi = 
+  ggplot(tenure_climate_Common_NonForest) + geom_jitter(data= tenure_climate_Common_NonForest, aes(x=MPI_District, y=Total_Population_sum, size=Total_Hectares, color = Vulnerability.Index), alpha= 0.5)+ theme_bw()+scale_color_viridis(option = "D")+
+  scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Multidimensional Poverty Index")+ 
+   geom_vline(xintercept = 0.2, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
+
+common_climate_mpi
+
+#Tenure 3: forest land
+forest_climate_mpi = 
+  ggplot(tenure_climate_Forest) + geom_jitter(data= tenure_climate_Forest, aes(x=MPI_District, y=Total_Population_sum, size=Total_Hectares, color = Vulnerability.Index), alpha= 0.5)+ theme_bw()+scale_color_viridis(option = "D")+
+  scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Multidimensional Poverty Index")+ 
+   geom_vline(xintercept = 0.2, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
+
+forest_climate_mpi
 
 
 ```
