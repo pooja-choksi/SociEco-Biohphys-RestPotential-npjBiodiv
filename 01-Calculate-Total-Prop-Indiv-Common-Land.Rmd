@@ -100,6 +100,9 @@ dat.summary = dat.summary%>%dplyr::mutate(State = recode(State,
 unique(dat.summary$State)
 #you should have 35 unique states and UT
 
+#there is an error in Basti district - the state should be Uttar Pradesh, but the csv says Odisha
+dat.summary = within(dat.summary, State[District_Name %in% c("Basti")]<-"Uttar Pradesh")
+
 #Remove duplicates due to copying errors in manual extraction of land use data
 duplicates = dat.summary[duplicated(dat.summary$Census_Code), ]
 dat.summary = anti_join(dat.summary, duplicates)

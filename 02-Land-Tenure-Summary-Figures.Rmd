@@ -12,10 +12,8 @@ library(dplyr)
 library(qcc)
 library(gridExtra)
 library(viridis)
-
 #get color blind friendly colors 
 library(pals)
-
 ```
 
 PEOPLE-CENTRIC RESTORATION: MAXIMISING HUMAN DEVELOPMENT AND ADDRESSING VULNERABILITY
@@ -38,7 +36,6 @@ dat.summary = read.csv("All-State-LandUse-Combined.csv")
 In the following chunk of code, we plot the total population and cumulative population at a district and state level.
 
 ```{r message= FALSE, warning= FALSE, include=TRUE}
-
 ##DISTRICT LEVEL PLOT
 
 #District summary of variables of interest
@@ -53,7 +50,8 @@ district_tot_pop <- district_tot_pop[order(district_tot_pop$Total_Population_sum
 district_tot_pop[,"cum_tot_pop"] <- cumsum(district_tot_pop$Total_Population_sum)
 
 #find duplicate district names
-duplicated_districts = district_tot_pop[duplicated(district_tot_pop$District_Name), ]
+duplicated_districts = 
+district_tot_pop[duplicated(district_tot_pop$District_Name), ]
 
 #rename the duplicate districts to be able to plot in descending 
 district_tot_pop = district_tot_pop%>%mutate(District_Name = case_when(District_Name == "Aurangabad" & State == "Bihar" ~ "Aurangabad_2", District_Name == "Bijapur" & State == "Karnataka" ~ "Bijapur_2", District_Name == "Bilaspur" & State == "Himachal Pradesh" ~ "Bilaspur_2", District_Name == "Hamirpur" & State== "Himachal Pradesh"~ "Hamirpur_2", District_Name == "Pratapgarh" & State == "Rajasthan" ~ "Pratapgarh_2", District_Name== "Raigarh" & State == "Maharashtra" ~ "Raigarh_2", District_Name == "Ranchi" & State == "Madhya Pradesh" ~ "Ranchi_2", TRUE ~ District_Name))
@@ -76,6 +74,7 @@ tot_pop_district_max  = district_tot_pop%>%mutate(District_Name = factor(Distric
 tot_pop_district_max
 
 ##STATE LEVEL PLOT
+
 #State total stacked area plot
 state_summary = dat.summary%>%group_by(State)%>%summarise_at(.vars =
 vars(Total_Indiv, Total_Common, Total_Forest, Total_Unaccounted,Total_Population),
@@ -86,9 +85,13 @@ state_summary <- state_summary[order(state_summary$Total_Population_sum, decreas
 
 #add cumulative column to the data frame
 state_summary[,"cum_indiv_hectares"] <- cumsum(state_summary$Total_Indiv_sum)
+
 state_summary[,"cum_common_hectares"] <- cumsum(state_summary$Total_Common_sum)
+
 state_summary[,"cum_forest_hectares"] <- cumsum(state_summary$Total_Forest_sum)
+
 state_summary[,"cum_unaccounted_hectares"] <- cumsum(state_summary$Total_Unaccounted_sum)
+
 state_summary[,"cum_total_population"] <- cumsum(state_summary$Total_Population_sum)
 
 #plot in descending order#assign order to prop variable
@@ -98,6 +101,7 @@ prop_order <-
   mutate(State = factor(State))
 
 #plot decreasing pop and cumulative hectares 
+
 scaleRight = 5
 
 population_max  = state_summary%>%mutate(State = factor(State, levels= prop_order$State, ordered =TRUE))%>%
@@ -124,10 +128,12 @@ In this chunk of code, we quantify the restoration prioritization based on the n
 ```{r message = FALSE, warning=FALSE, include = FALSE}
 
 #Read in the MPI data
+
 mpi_district = read.csv("Multidimensional_Poverty_Index_2018.csv")
 
 #ensure names of districts and states match in mpi and dat.summary 
 conflict_state = mpi_district[!mpi_district$State %in% dat.summary$State, ]
+
 unique(conflict_state$State)
 
 #change State names to match dat.summary 
@@ -140,7 +146,9 @@ mpi_district = mpi_district%>%dplyr::mutate(State = recode(State, "Andaman And N
 
 #check again
 conflict_state = mpi_district[!mpi_district$State %in% dat.summary$State, ]
+
 unique(conflict_state$State)
+
 #the states/ UTS that remain as conflict are those that do not have ;land use data and were removed in script 1 - Meghalaya. Mizoram, Puducherry
 
 #here we filter them out to remove from analysis
@@ -261,11 +269,10 @@ mpi_dat.summary = merge(dat.summary, mpi_district[c("District", "State", "MPI_Di
 #find the districts with no match between mpi and dat.summary 
 conflict_obs = mpi_district[!mpi_district$District %in% mpi_dat.summary$District_Name, ]
 
-#the 42 conflict obs that remain are only metropolitan areas/ towns (with no land use data), other districts (e.g.: Arunachal Pradesh) with no land use data available from census 2011 records and one new district in UP (Basti) for which there is no land use data. 
-
+#the 41 conflict obs that remain are only metropolitan areas/ towns (with no land use data), other districts (e.g.: Arunachal Pradesh) with no land use data available from census 2011 records and one new district in UP (Basti) for which there is no land use data. 
 ```
 
-Total N = 594 districts
+Total N = 593 districts
 
 ```{r message = FALSE, warning=FALSE, include = TRUE}
 
@@ -284,18 +291,21 @@ mpi_district_summary <- mpi_district_summary[order(mpi_district_summary$Number_o
 mpi_district_summary[,"cum_mpi_poor"] <- cumsum(mpi_district_summary$Number_of_MPI_PeopleDistrict)
 
 #find duplicate district names
-duplicated_districts = mpi_district_summary[duplicated(mpi_district_summary$District_Name), ]
+duplicated_districts = mpi_district_summary[duplicated(mpi_district_summary$District_Name),]
 
-#rename the duplicate districts to be able to plot in descending 
+#rename the 6 duplicate districts to be able to plot in descending 
+
 mpi_district_summary = mpi_district_summary%>%mutate(District_Name = case_when(District_Name == "Aurangabad" & State == "Bihar" ~ "Aurangabad_2", District_Name == "Bijapur" & State == "Karnataka" ~ "Bijapur_2", District_Name == "Bilaspur" & State == "Himachal Pradesh" ~ "Bilaspur_2", District_Name == "Hamirpur" & State== "Himachal Pradesh"~ "Hamirpur_2", District_Name == "Pratapgarh" & State == "Rajasthan" ~ "Pratapgarh_2", District_Name== "Raigarh" & State == "Maharashtra" ~ "Raigarh_2", TRUE ~ District_Name))
 
 #plot in descending order#assign order to prop variable
+
 prop_order <-
   mpi_district_summary %>%
   arrange(desc(Number_of_MPI_PeopleDistrict)) %>%
   mutate(District_Name = factor(District_Name))
 
 ##DISTRICT LEVEL PLOT
+
 scaleRight = 85
 
 mpi_district_max  = mpi_district_summary%>%mutate(District_Name = factor(District_Name, levels= unique(prop_order$District_Name), ordered =TRUE))%>%
@@ -307,8 +317,8 @@ mpi_district_max  = mpi_district_summary%>%mutate(District_Name = factor(Distric
 
 mpi_district_max
 
-
 ##STATE LEVEL PLOT
+
 #Aggregate to state 
 mpi_state_summary = mpi_district_summary%>%group_by(State)%>%mutate(
   Total_mpi_poor = sum(Number_of_MPI_PeopleDistrict))
@@ -347,10 +357,11 @@ mpi_max  = mpi_state_summary%>%mutate(State = factor(State, levels= prop_order$S
 mpi_max
 
 options(scipen = 999)
-
 ```
 
 (3) CLIMATE VULNERABILITY 
+
+In the chunk of code below we combine the MPI, district census info and the climate vulnerability data. At the end of the code, we write the csv, which we need for our spatial data in 06. 
 
 Total N = 448 districts
 
@@ -408,19 +419,32 @@ vulnerability = vulnerability%>%dplyr::mutate(District = recode(District,
 "Khamman" = "Khammam"))
 
 #combine this climate vulnerability data with the district summary created in previous chunk of code on line 234
+
 district_mpi_climate_summary = merge(mpi_district_summary, vulnerability[c("District", "Event", "Exposure", "Sensitivity", "Adaptive.Capacity", "Vulnerability.Index")], by.x = c("District_Name"), by.y= c("District"))
 
 #check missing districts 
 missing = setdiff(vulnerability$District, mpi_district_summary$District_Name)   # elements in first NOT in second
-#there should 15 districts missing. these districts are all urban and do not have land use data from census 2011
+
+#there should 14 districts missing. these districts are all urban and do not have land use data from census 2011
 
 #there are 6 duplicate districts names with no vulnerability data - to remove 
 district_mpi_climate_summary = district_mpi_climate_summary%>%filter(!(District_Name=="Aurangabad" & State == "Bihar"), !(District_Name == "Bijapur" & State == "Chhattisgarh"), !(District_Name == "Bilaspur" & State == "Himachal Pradesh"), !(District_Name == "Hamirpur" & State == "Himachal Pradesh"), !(District_Name == "Pratapgarh" & State == "Uttar Pradesh"), ! (District_Name == "Raigarh" & State == "Maharashtra"))
 
-#Total N = 448 districts
+#Total N = 447 districts
 
 #creating a weighted average for number of people in climate vulnerbility in each district
 district_mpi_climate_summary = district_mpi_climate_summary%>%mutate(climate_vulnerable_weighted = Vulnerability.Index*Total_Population_sum)
+
+#write csv 
+setwd("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential")
+write.csv(district_mpi_climate_summary, "District-Climate-MPI.csv")
+
+```
+
+PLOTS BASED ON CLIMATE VULNERABILITY DATA
+
+```{r message= FALSE, warning=FALSE, include=TRUE}
+#Plots 
 
 #order the table in descending order
 prop_order = district_mpi_climate_summary%>%
@@ -428,29 +452,23 @@ prop_order = district_mpi_climate_summary%>%
   mutate(District_Name = factor(District_Name))
 
 ##DISTRICT LEVEL PLOT
+
 #cumulative number of vulnerable people
 district_mpi_climate_summary
 district_mpi_climate_summary[,"cum_vulnerable"] <- cumsum(district_mpi_climate_summary$climate_vulnerable_weighted)
 
-#colors for states
-labs = c('alphabet', 'alphabet2', 'glasbey', 'kelly', 'polychrome')
-op = par(mar = c(0, 5, 3, 1))
-pal.bands(alphabet(), alphabet2(), glasbey(), kelly(), polychrome(), 
-          labels = labs, show.names = FALSE)
-
 #plot decreasing pop and cumulative hectares 
 scaleRight =70
-
 vulnerable_district_max  = district_mpi_climate_summary%>%mutate(District_Name = factor(District_Name, levels= prop_order$District_Name, ordered =TRUE))%>%
   ggplot(aes(x = District_Name))+ 
   geom_col(aes(x = District_Name, y = climate_vulnerable_weighted, fill = State)) + 
   geom_line(aes(y= cum_vulnerable/scaleRight), group = 1, color = "black", size = 1.2)+
   scale_fill_manual(values = c("#b296da", "#83b936", "#954ec1", "#52bd58", "#cc48ab", "#3f8645", "#cf7cdf", "#bcae37", "#6471e0", "#db9131", "#625ca5", "#698424", "#d9407f", "#5ac398", "#d03d4c", "#4bc0d8", "#d7502c", "#578dce", "#b35731", "#2e8871", "#9a4c86", "#9eb266", "#de83b2", "#646b2b", "#a54a5c", "#d7a269", "#e4817b", "#936a2e"))+ scale_y_continuous(name = "Climate Vulnerable Population (in Millions)", sec.axis = sec_axis(~.*scaleRight, name="Cumulative Climate Vulnerable Population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)), labels = scales::label_number(unit = "M", scale = 1e-6))+
   theme_classic()+ theme(axis.title = element_text(size = 8), axis.text.x = element_blank(), axis.ticks.x = element_blank()) +theme(legend.position = "bottom")
-
 vulnerable_district_max
 
 ##STATE LEVEL PLOT 
+
 #Aggregate to state 
 mpi_climate_state_summary = district_mpi_climate_summary%>%group_by(State)%>%summarise_at(.vars =vars(Total_Indiv_sum, Total_Common_sum, Total_Forest_sum, Total_Unaccounted_sum, Total_Population_sum, Total_hectares_for_prop_sum, climate_vulnerable_weighted), .funs =c(sum = "sum"))
 
@@ -483,7 +501,6 @@ Plot all variables of interest (1,2,3) in one plot
 ```{r message= FALSE, warning=FALSE, include =TRUE}
 
 grid.arrange(population_max, mpi_max, vulnerable_max, nrow = 3)
-
 ```
 
 (4) TOTAL HECTARES AVAILABLE FOR RESTORATION (as per land tenure):
@@ -511,7 +528,6 @@ state_summary <- state_summary[order(state_summary$Total_hectares, decreasing=TR
 state_summary[,"cum_total_hectares"] = cumsum(state_summary$Total_hectares)
 
 #To plot every land tenure available in total hectares in a state, we make the table wide to long
-
 #create a state summary
 state_summary_2 = dat.summary%>%group_by(State)%>%summarise_at(.vars = vars(Total_Indiv, Total_Common, Total_Forest, Total_Unaccounted,Total_Population),
 .funs =c(sum = "sum"))
@@ -549,7 +565,6 @@ state_total_plot = state_summary_long%>%
 state_total_plot
 
 #Plot by each land tenure category:
-
 #create a separate dataframe for each land tenure
 for(i in unique(state_summary_long$Land_Tenure)) {
         name <- paste("tenure_state_", i, sep = "")
@@ -579,8 +594,8 @@ indivudal_total_hectares  = tenure_state_Individual%>%mutate(State = factor(Stat
 
 indivudal_total_hectares
 
-
 #Tenure 2: Common 
+
 #descending order to make cumulative curve 
 tenure_state_Common_NonForest <- tenure_state_Common_NonForest[order(tenure_state_Common_NonForest$Total_Hectares, decreasing=TRUE),]
 
@@ -604,6 +619,7 @@ common_total_hectares  = tenure_state_Common_NonForest%>%mutate(State = factor(S
 common_total_hectares
 
 #Tenure 3: Forest land
+
 #descending order to make cumulative curve 
 tenure_state_Forest <- tenure_state_Forest[order(tenure_state_Forest$Total_Hectares, decreasing=TRUE),]
 
@@ -632,11 +648,10 @@ forest_total_hectares
 
 When prioritizing restoration in a district (or state) based on (1) max population, (2) MPI and (3) climate vulnerability, (4) all three factors combined?
 
-This analysis is carried out at the state level.
-
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 
 #create a district summary
+
 #District summary of variables of interest
 district_summary_2 = dat.summary%>%dplyr::group_by(District_Name, State)%>%summarise_at(.vars =vars(Total_Indiv, Total_Common, Total_Forest, Total_Unaccounted, Total_Population, Total_area_in_hectares),
 .funs =c(sum = "sum"))
@@ -644,7 +659,6 @@ district_summary_2 = dat.summary%>%dplyr::group_by(District_Name, State)%>%summa
 #Combine this table with the mpi table
 mpi_district_summary_2 = merge(district_summary_2, mpi_district[c("District", "State", "MPI_District", "Number_of_MPI_PeopleDistrict")], by.x = c("State", "District_Name"), by.y= c("State", "District"))
 
-#make the table long
 #reshape data for plotting
 mpi_district_summary_2_long = reshape(mpi_district_summary_2, direction='long',
         varying=c('Total_Indiv_sum', 'Total_Common_sum', 'Total_Forest_sum', 'Total_Unaccounted_sum'),
@@ -664,7 +678,8 @@ for(i in unique(mpi_district_summary_2_long$Land_Tenure)) {
 tenure_indiv_state = tenure_Individual%>%group(State)%<%
   
 #cumulative hectares in each land tenure in descending order
-#individual land
+
+  #individual land
 tenure_Individual <- tenure_Individual[order(tenure_Individual$Total_Hectares, decreasing=TRUE),]
 
 tenure_Individual[,"cum_indiv_hectares"] <- cumsum(tenure_Individual$Total_Hectares)
@@ -696,9 +711,10 @@ tenure_indiv_plot = tenure_Individual%>%
   geom_line(aes(y= cum_indiv_hectares/scaleRight), group = 1, color = "black", size = 1.2)+ theme_classic()+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+ scale_y_continuous(name = "Total hectares (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6), sec.axis = sec_axis(~.*scaleRight, name="Cumulative Hectares (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))) +
   #scale_fill_manual(labels = c("Common land", "Forest land", "Individual land", "Unaccounted land"), values=c("#999933","#117733","#E69F00", "#D55E00")) + labs(fill = "Land tenure/cover", x = "State/ Union Territory")
 
-state_total_plot
+tenure_indiv_plot
 
 ```
+
 ## QUESTION 3:
 
 What are the synergies and trade-offs between socio-economic and climate vulnerability factors when planning restoration according to land tenure regimes or according to total area available?
@@ -709,38 +725,38 @@ This analysis is done at a district level.
 ```{r message= FALSE, warning=FALSE, include=TRUE}
 
 #use the input dfs from the chunk of code above
+
 #Tenure 1: Individual land 
+
 individual_tradeoff_1 = 
   ggplot(tenure_Individual) + geom_jitter(data= tenure_Individual, aes(x=Number_of_MPI_PeopleDistrict, y=Total_Population_sum, size=Total_Hectares), color = "#E69F00", alpha= 0.5)+ theme_bw()+
   scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Multidimensionally poor population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+   geom_vline(xintercept = 1750000, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
-                                                                         
+                                                                     
 individual_tradeoff_1                                                     
-
 #Tenure 1: Individual land 
 individual_tradeoff_2 = 
   ggplot(tenure_Individual) + geom_jitter(data= tenure_Individual, aes(x=MPI_District, y=Total_Population_sum, size=Total_Hectares), color = "#E69F00", alpha= 0.5)+ theme_bw()+
   scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) +
    geom_vline(xintercept = 0.2, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
 #scale_x_continuous(name="Multidimensionally poor population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))
-                                                                         
+                                                                    
 individual_tradeoff_2
 
 #Tenure 2: Common land 
 common_tradeoff_1 = 
   ggplot(tenure_Common_NonForest) + geom_jitter(data= tenure_Common_NonForest, aes(x=Number_of_MPI_PeopleDistrict, y=Total_Population_sum, size=Total_Hectares), color = "#999933", alpha= 0.5)+ theme_bw()+
   scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Multidimensionally poor population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+   geom_vline(xintercept = 1750000, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
-                                                                         
-common_tradeoff_1
+                                                                     common_tradeoff_1
 
-#Tenure 2: Common land 
+                                                                     #Tenure 2: Common land 
 common_tradeoff_2 = 
   ggplot(tenure_Common_NonForest) + geom_jitter(data= tenure_Common_NonForest, aes(x=MPI_District, y=Total_Population_sum, size=Total_Hectares), color = "#999933", alpha= 0.5)+ theme_bw()+
-  scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + #scale_x_continuous(name="Multidimensionally poor population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+ 
+  scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + #scale_x_continuous(name="Multidimensionally poor population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+
   geom_vline(xintercept = 0.2, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
-                                                                         
+    
 common_tradeoff_2                                                        
-
 #Tenure 3: Forest land 
+
 forest_tradeoff_1 = 
   ggplot(tenure_Forest) + geom_jitter(data= tenure_Forest, aes(x=Number_of_MPI_PeopleDistrict, y=Total_Population_sum, size=Total_Hectares), color = "#117733", alpha= 0.5)+ theme_bw()+
   scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Multidimensionally poor population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+   geom_vline(xintercept = 1750000, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
@@ -749,13 +765,12 @@ forest_tradeoff_1
 
 forest_tradeoff_2 = 
   ggplot(tenure_Forest) + geom_jitter(data= tenure_Forest, aes(x=MPI_District, y=Total_Population_sum, size=Total_Hectares), color = "#117733", alpha= 0.5)+ theme_bw()+
-  scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + #scale_x_continuous(name="Multidimensionally poor population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+  
+  scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + #scale_x_continuous(name="Multidimensionally poor population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+
   geom_vline(xintercept = 0.2, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
 
 forest_tradeoff_2
 
 grid.arrange(forest_tradeoff_1, common_tradeoff_1, individual_tradeoff_1, nrow= 3)
-
 
 grid.arrange(forest_tradeoff_2, common_tradeoff_2, individual_tradeoff_2, nrow= 3)
 
@@ -796,9 +811,11 @@ tenure_climate_Common_NonForest <- tenure_climate_Common_NonForest[order(tenure_
 tenure_climate_Common_NonForest[,"cum_common_hectares"] <- cumsum(tenure_climate_Common_NonForest$Total_Hectares)
 
 #forest land
+
 tenure_climate_Forest <- tenure_climate_Forest[order(tenure_climate_Forest$Total_Hectares, decreasing=TRUE),]
 
 tenure_climate_Forest[,"cum_forest_hectares"] <- cumsum(tenure_climate_Forest$Total_Hectares)
+
 ```
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
@@ -809,16 +826,15 @@ individual_climate_tradeoff_1 =
   scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Climate Vulnerable Population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+   geom_vline(xintercept = 1750000, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
                                                                          
 individual_climate_tradeoff_1                                                     
-
 #Tenure 1: Individual land 
 individual_climate_tradeoff_2 = 
   ggplot(tenure_climate_Individual) + geom_jitter(data= tenure_climate_Individual, aes(x=Vulnerability.Index, y=Total_Population_sum, size=Total_Hectares), color = "#E69F00", alpha= 0.5)+ theme_bw()+
   scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Climate Vulnerability Index")+ 
    geom_vline(xintercept = 0.5, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
-
 individual_climate_tradeoff_2
 
 #Tenure 2: Common land 
+
 common_climate_tradeoff_1 = 
   ggplot(tenure_climate_Common_NonForest) + geom_jitter(data= tenure_climate_Common_NonForest, aes(x=climate_vulnerable_weighted, y=Total_Population_sum, size=Total_Hectares), color = "#999933", alpha= 0.5)+ theme_bw()+
   scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Climate Vulnerable Population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+   geom_vline(xintercept = 1750000, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
@@ -832,7 +848,6 @@ common_climate_tradeoff_2 =
   geom_vline(xintercept = 0.5, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
                                                                          
 common_climate_tradeoff_2                                                        
-
 #Tenure 3: Forest land 
 forest_climate_tradeoff_1 = 
   ggplot(tenure_climate_Forest) + geom_jitter(data= tenure_climate_Forest, aes(x=climate_vulnerable_weighted, y=Total_Population_sum, size=Total_Hectares), color = "#117733", alpha= 0.5)+ theme_bw()+
@@ -861,6 +876,7 @@ Combine all four factors - MPI, Climate vulnerability index, Total population an
 
 #All the land tenures together
 #first categorise the three variables
+
 district_mpi_climate_summary$tenure_max  = apply(district_mpi_climate_summary[c("Total_Indiv_sum", "Total_Common_sum", "Total_Forest_sum")], 1, max)
 
 district_mpi_climate_summary = district_mpi_climate_summary%>%mutate(tenure_max_cat = 
@@ -876,7 +892,6 @@ pop_climate_mpi =
 
 pop_climate_mpi
 
-
 #Tenure 1: Individual land
 individual_climate_mpi = 
   ggplot(tenure_climate_Individual) + geom_jitter(data= tenure_climate_Individual, aes(x=MPI_District, y=Total_Population_sum, size=Total_Hectares, color = Vulnerability.Index), alpha= 0.5)+ theme_bw()+scale_color_viridis(option = "D")+
@@ -890,7 +905,6 @@ common_climate_mpi =
   ggplot(tenure_climate_Common_NonForest) + geom_jitter(data= tenure_climate_Common_NonForest, aes(x=MPI_District, y=Total_Population_sum, size=Total_Hectares, color = Vulnerability.Index), alpha= 0.5)+ theme_bw()+scale_color_viridis(option = "D")+
   scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Multidimensional Poverty Index")+ 
    geom_vline(xintercept = 0.2, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
-
 common_climate_mpi
 
 #Tenure 3: forest land
@@ -898,8 +912,8 @@ forest_climate_mpi =
   ggplot(tenure_climate_Forest) + geom_jitter(data= tenure_climate_Forest, aes(x=MPI_District, y=Total_Population_sum, size=Total_Hectares, color = Vulnerability.Index), alpha= 0.5)+ theme_bw()+scale_color_viridis(option = "D")+
   scale_y_continuous(name = "Total population (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6)) + scale_x_continuous(name="Multidimensional Poverty Index")+ 
    geom_vline(xintercept = 0.2, linetype="dashed") + geom_hline(yintercept = 3000000, linetype="dashed")
-
 forest_climate_mpi
+
 ```
 
 DATA SUMMARIES PROVIDED IN RESULTS AND DISCUSSION SECTION 
@@ -907,10 +921,9 @@ DATA SUMMARIES PROVIDED IN RESULTS AND DISCUSSION SECTION
 We use the chunk of code below to report key statistics on the districts. 
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
-
 #Question 3: Synergies and tradeoffs in district
-
 #Use the quantiles to make the categories
+
 #1. Climate vulnerability
 summary(district_mpi_climate_summary$Vulnerability.Index)
 
@@ -923,6 +936,7 @@ district_mpi_climate_summary = district_mpi_climate_summary%>%mutate(vulnerabili
 
 #2. MPI
 summary(district_mpi_climate_summary$MPI_District)
+
 district_mpi_climate_summary = district_mpi_climate_summary%>%mutate(MPI_cat = case_when(
   MPI_District <0.05725 ~ "Very low",
   MPI_District>=0.05725 & MPI_District<0.13150 ~ "Low",
@@ -931,6 +945,7 @@ district_mpi_climate_summary = district_mpi_climate_summary%>%mutate(MPI_cat = c
   TRUE~ "NA"))
 
 #3. Total population
+
 summary(district_mpi_climate_summary$Total_Population_sum)
 
 district_mpi_climate_summary = district_mpi_climate_summary%>%mutate(Total_Pop_Cat = case_when(
@@ -941,19 +956,15 @@ district_mpi_climate_summary = district_mpi_climate_summary%>%mutate(Total_Pop_C
   TRUE~ "NA"))
 
 #Values in the paper 
-
 #Districts with all variables high
-high_districts = district_mpi_climate_summary%>%filter(MPI_cat == "High" &
-                                                         vulnerability_cat == "High" & Total_Pop_Cat == "High")
+high_districts = district_mpi_climate_summary%>%filter(MPI_cat == "High" & vulnerability_cat == "High" & Total_Pop_Cat == "High")
 
-verylow_districts = district_mpi_climate_summary%>%filter(MPI_cat == "Very low" &
-                                                         vulnerability_cat == "Very low" & Total_Pop_Cat == "Very low")
+verylow_districts = district_mpi_climate_summary%>%filter(MPI_cat == "Very low" & vulnerability_cat == "Very low" & Total_Pop_Cat == "Very low")
 
 low_districts = district_mpi_climate_summary%>%filter(MPI_cat == "Low" &
                                                          vulnerability_cat == "Low" & Total_Pop_Cat == "Low")
 
 ```
-
 
 SUPPLEMENTARY INFORMATION: 
 Plot the proportion of land tenure (in hectares) in each state ordered by total population in each state.
@@ -966,6 +977,7 @@ vars(Total_Indiv, Total_Common, Total_Forest, Total_Unaccounted,Total_Population
 .funs =c(sum = "sum"))
 
 #reshape data for plotting
+
 state_summary_long = reshape(state_summary_2, direction='long',
         varying=c('Total_Indiv_sum', 'Total_Common_sum', 'Total_Forest_sum', 'Total_Unaccounted_sum'),
         timevar= 'Land_Tenure',
@@ -979,16 +991,18 @@ state_summary_long <- state_summary_long[order(state_summary_long$Total_Hectares
 #Proportion of land available in each land tenure
 state_summary_prop = state_summary_2%>%mutate(Prop_Indiv = (Total_Indiv_sum/
 (Total_Indiv_sum+Total_Common_sum+Total_Forest_sum+Total_Unaccounted_sum))*100,
+
 Prop_Common = (Total_Common_sum/
 (Total_Indiv_sum+Total_Common_sum+Total_Forest_sum+Total_Unaccounted_sum))*100,
+
 Prop_Unaccounted =(Total_Unaccounted_sum/
 (Total_Indiv_sum+Total_Common_sum+Total_Forest_sum+Total_Unaccounted_sum))*100,
+
 Prop_Forest = (Total_Forest_sum/
 (Total_Indiv_sum+Total_Common_sum+Total_Forest_sum+Total_Unaccounted_sum))*100)
 
 #reshape data for plotting
 state_summary_prop = state_summary_prop[, -c(2:5)]
-
 state_summary_prop_long = reshape(state_summary_prop, direction='long',
         varying=c('Prop_Indiv', 'Prop_Common', 'Prop_Forest', 'Prop_Unaccounted'),
         timevar= 'Land_Tenure',
@@ -1005,6 +1019,7 @@ prop_order <-
   mutate(State = factor(State))
 
 #plot
+
 state_prop_plot = state_summary_prop_long%>%
   mutate(State = factor(State, levels = prop_order$State, ordered = TRUE)) %>%
   ggplot(aes(x = State, y = Total_Prop, fill = Land_Tenure))+

@@ -1,0 +1,147 @@
+---
+title: "People-centric restoration: Mapping variables to districts"
+author: "Pooja Choksi"
+date: '2022-06-22'
+output: html_document
+---
+
+COMBINING DISTRICT LEVEL VARIABLES WITH SPATIAL DATA
+
+``````{r setup, include=FALSE}
+
+library(data.table)
+library(dplyr)
+library(tidyr)
+library(sf)
+library(rgdal)
+library(tools)
+library(sp)
+
+
+```
+
+Read in the spatial data to be combined with the tables from script 02.
+
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+
+#India district spatial data
+
+districts = readOGR("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-District-Shapefiles\\IND_adm2.shp")
+
+districts_notspatial = st_drop_geometry(districts)
+
+#District level indices data 
+district_mpi_climate_summary = read.csv("District-Climate-MPI.csv")
+
+
+```
+
+CLEAN THE DISTRCIT SPATIAL DATA TO MATCH THE CLIMATE, MPI DATA AT DISTRICT LEVEL
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+
+#first check if all state names match 
+state_names_missing =  setdiff(districts_notspatial$NAME_1, district_mpi_climate_summary$State)   # elements in first NOT in second
+
+#recode the state names to match the spatial data 
+district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(State = recode(State, "Andaman Nicobar UT" = "Andaman and Nicobar", "Daman Diu" = "Daman and Diu", "NCT_Delhi" = "NCT of Delhi", "Jammu Kashmir" = "Jammu and Kashmir", "Dadra Nagarhaveli UT" = "Dadra and Nagar Haveli", "Tamil_Nadu" = "Tamil Nadu", "West_Bengal" = "West Bengal"))
+
+state_names_missing 
+
+#Check for district names that don't match
+district_names_missing =  setdiff(districts_notspatial$NAME_2, district_mpi_climate_summary$District_Name)   # elements in first NOT in second
+
+#recode the district names to match the spatial data 
+district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(District_Name = recode(District_Name, "Uttar_Bastar_Kanker" = "Uttar Bastar Kanker",
+                                                     "Janjgir_Champa" = "Janjgir-Champa","Panch Mahals" = "Panch Mahals","Leh(Ladakh)" = "Leh (Ladakh)", "Pashchimi_Singhbhum" = "Pashchimi Singhbhum",
+                                                     "Purbi_Singhbhum"= "Purbi Singhbhum",                                                      "Saraikela_Kharsawan" = "Saraikela-kharsawan", 
+"The_Nilgiris" = "The Nilgiris", 
+"Kanshiram_Nagar" = "Kanshiram Nagar",
+"Sant_Kabir_Nagar" = "Sant Kabir Nagar",
+"Sant_Ravidas_Nagar_(Bhadohi)" = "Sant Ravi Das Nagar",
+"Siddharthnagar" = "Siddharth Nagar",
+"Tehri_Garhwal" = "Tehri Garhwal",
+"Udham_Singh_Nagar" = "Udham Singh Nagar",
+"Dakshin_Dinajpur" = "Dakshin Dinajpur", 
+"Koch_Bihar" = "Koch Bihar",
+"Bara Banki" = "Barabanki",
+"North_Twenty_Four_Parganas" = "North 24 Parganas",
+"Paschim Medinipur" = "Pashchim Medinipur",
+"Purba_Medinipur" = "Purba Medinipur", 
+"South_Twenty_Four_Parganas" = "South 24 Parganas", 
+"Nagapattinam" = "Nagappattinam",
+"Mahrajganj" = "Maharajganj",
+"Uttar_Dinajpur" = "Uttar Dinajpur",
+"Virudhunagar" = "Virudunagar",
+"North District" = "North Sikkim",
+"South District" = "South Sikkim",
+"Chamrajanagar" = "Chamrajnagar",
+"Chikkaballapura" = "Chikballapura",
+"Dhar " = "Dhar",
+"Kheri" = "Lakhimpur Kheri",
+"Jyotiba Phule Nagar" = "Amroha",
+"Rangareddy" = "Ranga Reddy",
+"Shrawasti" = "Shravasti",
+"Sri Potti Sriramulu Nellore" = "Nellore",
+"Papumpare" = "Papum Pare",
+"Gadchiroli" = "Garhchiroli",
+"North & Middle Andaman" = "North and Middle Andaman",
+"Khandwa (East Nimar)" = "East Nimar"))
+
+#check again
+#Check for district names that don't match
+district_names_missing =  setdiff(district_mpi_climate_summary$District_Name,
+districts_notspatial$NAME_2)   # elements in first NOT in second
+
+districts_notspatial_merged = merge(districts_notspatial, district_mpi_climate_summary, by.x = "NAME_2", by.y="District_Name")
+
+#Check for district names that don't match
+missing_districts = setdiff(districts_notspatial_merged$NAME_2,
+district_mpi_climate_summary$District_Name)   # elements in first NOT in second
+
+#come back to this later now that the data matches completely
+```
+
+Create the people-centric ranking for each district and then the mean of the scale that goes from 0 to 1
+
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+
+##MPI
+#Rank the districts on MPI 
+#rearrange the districts in descending order of MPI
+district_mpi_climate_summary  <- district_mpi_climate_summary [order(district_mpi_climate_summary$MPI_District, decreasing=TRUE),]
+
+#assign each district a rank
+district_mpi_climate_summary$MPI_rank = 1:nrow(district_mpi_climate_summary)
+
+##Climate vulnerability 
+#rearrange the districts in descending order of MPI
+district_mpi_climate_summary  <- district_mpi_climate_summary [order(district_mpi_climate_summary$Vulnerability.Index, decreasing=TRUE),]
+
+#assign each district a rank
+district_mpi_climate_summary$Vulnerability_Rank = 1:nrow(district_mpi_climate_summary)
+
+#Total population
+#rearrange the districts in descending order of MPI
+district_mpi_climate_summary  <- district_mpi_climate_summary [order(district_mpi_climate_summary$Total_Population_sum, decreasing=TRUE),]
+
+#assign each district a rank
+district_mpi_climate_summary$Population_Rank = 1:nrow(district_mpi_climate_summary)
+
+#Create the average rank of all three variables
+district_mpi_climate_summary = district_mpi_climate_summary%>%mutate(Mean_Rank = rowMeans(select(., MPI_rank:Population_Rank)))
+
+range01 <- function(x){(x-min(x))/(max(x)-min(x))}
+
+district_mpi_climate_summary$Mean_Rank_Scaled = range01(district_mpi_climate_summary$Mean_Rank)
+
+#Combine the spatial data with district level data
+districts <-  sp::merge(districts, district_mpi_climate_summary, by.x = c("NAME_2"),by.y = c("District_Name"),duplicateGeoms = T)
+
+setwd("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-District-Shapefiles\\")
+
+writeOGR(obj = districts, layer = "districts", dsn= "District-MPI-Climate-Pop-Merged.shp", driver = "ESRI Shapefile")
+
+```
