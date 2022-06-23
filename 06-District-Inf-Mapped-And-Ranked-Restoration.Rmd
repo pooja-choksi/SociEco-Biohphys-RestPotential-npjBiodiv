@@ -29,8 +29,6 @@ Read in the spatial data to be combined with the tables from script 02.
 
 districts = readOGR("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-District-Shapefiles\\IND_adm2.shp")
 
-districts_notspatial = st_drop_geometry(districts)
-
 #District level indices data 
 district_mpi_climate_summary = read.csv("District-Climate-MPI.csv")
 
@@ -42,7 +40,7 @@ CLEAN THE DISTRCIT SPATIAL DATA TO MATCH THE CLIMATE, MPI DATA AT DISTRICT LEVEL
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 
 #first check if all state names match 
-state_names_missing =  setdiff(districts_notspatial$NAME_1, district_mpi_climate_summary$State)   # elements in first NOT in second
+state_names_missing =  setdiff(districts$NAME_1, district_mpi_climate_summary$State)   # elements in first NOT in second
 
 #recode the state names to match the spatial data 
 district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(State = recode(State, "Andaman Nicobar UT" = "Andaman and Nicobar", "Daman Diu" = "Daman and Diu", "NCT_Delhi" = "NCT of Delhi", "Jammu Kashmir" = "Jammu and Kashmir", "Dadra Nagarhaveli UT" = "Dadra and Nagar Haveli", "Tamil_Nadu" = "Tamil Nadu", "West_Bengal" = "West Bengal"))
@@ -50,7 +48,7 @@ district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(Stat
 state_names_missing 
 
 #Check for district names that don't match
-district_names_missing =  setdiff(districts_notspatial$NAME_2, district_mpi_climate_summary$District_Name)   # elements in first NOT in second
+district_names_missing =  setdiff(districts$NAME_2, district_mpi_climate_summary$District_Name)   # elements in first NOT in second
 
 #recode the district names to match the spatial data 
 district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(District_Name = recode(District_Name, "Uttar_Bastar_Kanker" = "Uttar Bastar Kanker",
@@ -92,9 +90,7 @@ district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(Dist
 #check again
 #Check for district names that don't match
 district_names_missing =  setdiff(district_mpi_climate_summary$District_Name,
-districts_notspatial$NAME_2)   # elements in first NOT in second
-
-districts_notspatial_merged = merge(districts_notspatial, district_mpi_climate_summary, by.x = "NAME_2", by.y="District_Name")
+districts$NAME_2)   # elements in first NOT in second
 
 #Check for district names that don't match
 missing_districts = setdiff(districts_notspatial_merged$NAME_2,
