@@ -16,7 +16,7 @@ library(sf)
 library(rgdal)
 library(tools)
 library(sp)
-
+library(ggplot2)
 
 ```
 
@@ -110,21 +110,21 @@ Create the people-centric ranking for each district and then the mean of the sca
 district_mpi_climate_summary  <- district_mpi_climate_summary [order(district_mpi_climate_summary$MPI_District, decreasing=TRUE),]
 
 #assign each district a rank
-district_mpi_climate_summary$MPI_rank = 1:nrow(district_mpi_climate_summary)
+district_mpi_climate_summary= district_mpi_climate_summary%>% mutate(MPI_rank = match(MPI_District, unique(MPI_District)))
 
 ##Climate vulnerability 
 #rearrange the districts in descending order of MPI
 district_mpi_climate_summary  <- district_mpi_climate_summary [order(district_mpi_climate_summary$Vulnerability.Index, decreasing=TRUE),]
 
 #assign each district a rank
-district_mpi_climate_summary$Vulnerability_Rank = 1:nrow(district_mpi_climate_summary)
+district_mpi_climate_summary= district_mpi_climate_summary%>% mutate(Vulnerability_Rank = match(Vulnerability.Index, unique(Vulnerability.Index)))
 
 #Total population
 #rearrange the districts in descending order of MPI
 district_mpi_climate_summary  <- district_mpi_climate_summary [order(district_mpi_climate_summary$Total_Population_sum, decreasing=TRUE),]
 
 #assign each district a rank
-district_mpi_climate_summary$Population_Rank = 1:nrow(district_mpi_climate_summary)
+district_mpi_climate_summary= district_mpi_climate_summary%>% mutate(Population_Rank = match(Total_Population_sum, unique(Total_Population_sum)))
 
 #Create the average rank of all three variables
 district_mpi_climate_summary = district_mpi_climate_summary%>%mutate(Mean_Rank = rowMeans(select(., MPI_rank:Population_Rank)))
@@ -138,6 +138,36 @@ districts <-  sp::merge(districts, district_mpi_climate_summary, by.x = c("NAME_
 
 setwd("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-District-Shapefiles\\")
 
-writeOGR(obj = districts, layer = "districts", dsn= "District-MPI-Climate-Pop-Merged.shp", driver = "ESRI Shapefile")
+writeOGR(obj = districts, layer = "districts", dsn= "District-MPI-Climate-Pop-Merged-V3.shp", driver = "ESRI Shapefile")
 
+```
+
+RESULTS TO REPORT IN THE PAPER 
+We look at the top and bottom quantile of the mean rank of districts and discuss restoration methods which are appropriate for different land tenure regimes in more detail
+
+```{R message=FALSE, warning=FALSE, include=TRUE}
+
+#Determine the top and bottom quantile of districts 
+summary(district_mpi_climate_summary$Mean_Rank_Scaled)
+
+#1st q = 0.4033
+#3rd q= 0.7071
+
+top_districts = district_mpi_climate_summary%>%filter(Mean_Rank_Scaled<0.4033)
+
+high_districts = district_mpi_climate_summary%>%filter(Mean_Rank_Scaled>0.7071)
+
+#Which states make up the top quartile of districts? 
+top_states = top_districts%>%group_by(State)%>%count()
+  
+#plot in descending order#assign order to prop variable
+prop_order <-
+  top_states%>%
+  arrange(desc(n)) %>%
+  mutate(State = factor(State))
+
+topstates_plot = top_states%>%mutate(State = factor(State, levels = prop_order$State, ordered = TRUE))%>%ggplot(aes(x= State, y = n))+geom_col(aes(x=State), fill = "#440154FF")+theme_classic()+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  labs(x = "State/ Union Territory", y = "Number of districts")
+
+topstates_plot
 ```
