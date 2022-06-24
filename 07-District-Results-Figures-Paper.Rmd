@@ -1,0 +1,109 @@
+---
+title: "People-centric restoration: Reporting district level results and figures"
+author: "Pooja Choksi"
+date: '2022-06-24'
+output: html_document
+---
+
+USING THE DATA FROM PREVIOUS SCRIPT, CHUNKS OF CODE BELOW REPORT THE RESULTS AND FIGURES IN THE PAPER
+
+```{r setup, include=FALSE}
+
+library(data.table)
+library(dplyr)
+library(tidyr)
+library(tools)
+library(ggplot2)
+
+```
+
+Read in the data from previous script which has the districts ranked according to 
+1. Climate vulnerability 
+2. Total population 
+3. MPI 
+4. A combination of all variables 
+
+It also has district level land tenure data
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+
+district_mpi_climate_summary = read.csv("District-Climate-MPI-Ranked.csv")
+
+```
+
+RESULTS TO REPORT IN THE PAPER 
+We look at the top and bottom quantile of the mean rank of districts and discuss restoration methods which are appropriate for different land tenure regimes in more detail
+
+1. CREATE THE DFS FOR TOP AND BOTTOM DISTRICTS 
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+
+#Determine the top and bottom quantile of districts 
+summary(district_mpi_climate_summary$Mean_Rank_Scaled)
+
+#1st q = 0.4033
+#3rd q= 0.7071
+
+top_districts = district_mpi_climate_summary%>%filter(Mean_Rank_Scaled<0.4033)
+
+high_districts = district_mpi_climate_summary%>%filter(Mean_Rank_Scaled>0.7071)
+
+```
+
+QUESTION 1: Which are the districts that should be prioritized when considering the following variables: (a) maximum population, (c) Multidimensional poverty index, (b) climate vulnerability index and (d) a combination of the variables?
+
+PLOT OF THE STATES IN WHICH WE FIND THE TOP DISTRICTS 
+
+```{r message= FALSE, warning=FALSE, include=TRUE}
+
+#Which states make up the top quartile of districts? 
+top_states = top_districts%>%group_by(State)%>%count()
+  
+#plot in descending order#assign order to prop variable
+prop_order <-
+  top_states%>%
+  arrange(desc(n)) %>%
+  mutate(State = factor(State))
+
+topstates_plot = top_states%>%mutate(State = factor(State, levels = prop_order$State, ordered = TRUE))%>%ggplot(aes(x= State, y = n))+geom_col(aes(x=State), fill = "#440154FF")+theme_classic()+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  labs(x = "State/ Union Territory", y = "Number of districts")
+
+topstates_plot
+
+c("Common land", "Forest land", "Individual land", "Unaccounted land"), values=c("#999933","#117733","#E69F00", "#D55E00")
+
+```
+
+QUESTION 2: Which land tenures within districts provide the largest number of hectares for restoration?
+
+PLOT OF THE DISTRIBUTION OF EACH LAND TENURE IN THE TOP DISTRICTS AND REPORT % of LAND TENURE IN TOP DISTRICTS
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+
+#plot of the distribution of land tenure in top districts
+tenure_topdistricts = ggplot(data = top_district_long, aes(Total_Hectares, fill = Land_Tenure))+geom_histogram()+
+  theme_classic()+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  labs(x = "Total number of hectares", y = "Freqeuncy")
+
+tenure_topdistricts = ggplot()+geom_histogram(data= top_districts, aes(x=Total_Forest_sum), fill ="#117733", alpha=0.5, binwidth = 300000)+geom_histogram(data = top_districts, aes(x=Total_Common_sum), fill = "#999933", alpha =0.5, binwidth = 300000)+ geom_histogram(data = top_districts, aes(x= Total_Indiv_sum), fill = "#E69F00", alpha= 0.5, binwidth = 300000)+ theme_classic()+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+ labs(x = "Total number of hectares", y = "Freqeuncy")
+
+tenure_topdistricts
+
+top_district_long = reshape(top_districts, direction='long', varying=c('Total_Indiv_sum', 'Total_Common_sum', 'Total_Forest_sum', 'Total_Unaccounted_sum'), timevar= 'Land_Tenure', times=c('Individual', 'Common_NonForest', 'Forest', 'Unaccounted'),
+v.names= 'Total_Hectares',
+idvar=c('State', 'Total_Population_sum', 'X', "MPI_District", "Number_of_MPI_PeopleDistrict", "Event", "Exposure", "Sensitivity",   "Adaptive.Capacity", "Vulnerability.Index", "climate_vulnerable_weighted", "MPI_rank", "Vulnerability_Rank", "Population_Rank", "Mean_Rank", "Mean_Rank_Scaled", "Total_hectares_for_prop_sum"))
+
+#reporting % of land tenure in each district 
+tenure_topdistricts_report = top_district_long%>%group_by(Land_Tenure)%>%summarise(hectares_category = sum(Total_Hectares))
+
+tenure_topdistricts_report= tenure_topdistricts_report%>%mutate(tenure_total = colSums(tenure_topdistricts_report[,-1])) 
+
+tenure_topdistricts_report = tenure_topdistricts_report%>%mutate(tenure_prop = (hectares_category/tenure_total)*100)
+
+#see DF to report the distribution
+
+```
+
+
+
+

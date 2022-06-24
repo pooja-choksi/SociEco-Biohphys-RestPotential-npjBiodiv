@@ -1,0 +1,90 @@
+---
+title: "People-centric restoration: Comparing district level biophysical potential with the people-centric restoration potential"
+author: "Pooja Choksi"
+date: '2022-06-24'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+library(data.table)
+library(dplyr)
+library(tidyr)
+library(sf)
+library(rgdal)
+library(raster)
+library(tools)
+library(sp)
+library(ggplot2)
+```
+
+READ IN ALL THE RASTERS FROM THE BIOPHYSICAL POTENTIAL STUDIES AND DISTRICT SHAPEFILE FROM PREVIOUS CODE
+
+```{r message=TRUE, warning=TRUE, include=TRUE}
+
+#rasters for three studies we're comparing our scale with
+brancalion <- raster("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Restoration_Potential_Studies\\India_Clipped\\Brancalion_India_Clipped.tif")
+
+strassburg = raster("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Restoration_Potential_Studies\\India_Clipped\\Strassburg_india_Clipped.tif")
+
+wri = raster("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Restoration_Potential_Studies\\India_Clipped\\Potapov_India_Clipped.tif")
+
+#district shapefile with info on the people-centric variables
+districts = readOGR("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-District-Shapefiles\\District-MPI-Climate-Pop-Merged-V3.shp")
+  
+```
+
+REPROJECT ALL RASTERS TO MATCH THE DISTRICT CRS AND EXTRACT MEAN BIOPHYSICAL POTENTIAL FOR EACH DISTRICT
+
+```{r pressure, echo=FALSE}
+
+brancalion_reprojected <- projectRaster(brancalion, crs= crs(districts))
+
+strassburg_reprojected <- projectRaster(strassburg, crs= crs(districts))
+
+wri_reprojected = projectRaster(wri, crs = crs(districts))
+
+#extract mean or majority (for wri data) of raster for each district
+brancalion_extracted = extract(brancalion, districts, fun = mean, na.rm = T, small = T, df = T)
+
+strassburg_extracted = extract(strassburg, districts, fun = mean, na.rm = T, small = T, df = T)
+
+wri_extracted = extract(wri, districts, fun= modal, na.rm = T, small= T, df = T)
+
+#combine the data of extracted values 
+potential_extracted = cbind(brancalion_extracted, strassburg_extracted, wri_extracted)
+
+potential_extracted = subset(potential_extracted, select = -c(ID,ID))
+
+#rank the districts as per their biophysical potential 
+#1. Brancalion
+#reorder the districts in descending order of MPI
+potential_extracted  <- potential_extracted [order(potential_extracted$Brancalion_India_Clipped, decreasing=TRUE),]
+
+#assign each district a rank
+potential_extracted= potential_extracted%>% mutate(branca_rank = match(Brancalion_India_Clipped, unique(Brancalion_India_Clipped)))
+
+#2. Potapov:
+#reorder the districts in descending order of MPI
+potential_extracted  <- potential_extracted [order(potential_extracted$Potapov_India_Clipped, decreasing=TRUE),]
+
+#assign each district a rank
+potential_extracted= potential_extracted%>% mutate(wri_rank = match(Potapov_India_Clipped, unique(Potapov_India_Clipped)))
+
+#3. Strassburg
+#reorder the districts in descending order of MPI
+potential_extracted  <- potential_extracted [order(potential_extracted$Strassburg_India_Clipped, decreasing=TRUE),]
+
+#assign each district a rank
+potential_extracted= potential_extracted%>% mutate(strass_rank = match(Strassburg_India_Clipped, unique(Strassburg_India_Clipped)))
+
+#merge the extracted data with distrcts shapefile
+districts = sp::merge(districts, potential_extracted, by.x = "ID_2", 
+                      by.y= "ID.1")
+
+writeOGR(districts, layer = "districts", dsn= "District-MPI-Climate-Pop-Merged-Biophys.shp", driver = "ESRI Shapefile")
+
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

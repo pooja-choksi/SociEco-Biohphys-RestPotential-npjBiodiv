@@ -7,7 +7,7 @@ output: html_document
 
 COMBINING DISTRICT LEVEL VARIABLES WITH SPATIAL DATA
 
-``````{r setup, include=FALSE}
+```{r setup, include=FALSE}
 
 library(data.table)
 library(dplyr)
@@ -31,7 +31,6 @@ districts = readOGR("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoratio
 
 #District level indices data 
 district_mpi_climate_summary = read.csv("District-Climate-MPI.csv")
-
 
 ```
 
@@ -92,15 +91,10 @@ district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(Dist
 district_names_missing =  setdiff(district_mpi_climate_summary$District_Name,
 districts$NAME_2)   # elements in first NOT in second
 
-#Check for district names that don't match
-missing_districts = setdiff(districts_notspatial_merged$NAME_2,
-district_mpi_climate_summary$District_Name)   # elements in first NOT in second
-
 #come back to this later now that the data matches completely
 ```
 
 Create the people-centric ranking for each district and then the mean of the scale that goes from 0 to 1
-
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 
@@ -140,34 +134,7 @@ setwd("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\L
 
 writeOGR(obj = districts, layer = "districts", dsn= "District-MPI-Climate-Pop-Merged-V3.shp", driver = "ESRI Shapefile")
 
+write.csv(district_mpi_climate_summary, "District-Climate-MPI-Ranked.csv" )
+
 ```
 
-RESULTS TO REPORT IN THE PAPER 
-We look at the top and bottom quantile of the mean rank of districts and discuss restoration methods which are appropriate for different land tenure regimes in more detail
-
-```{R message=FALSE, warning=FALSE, include=TRUE}
-
-#Determine the top and bottom quantile of districts 
-summary(district_mpi_climate_summary$Mean_Rank_Scaled)
-
-#1st q = 0.4033
-#3rd q= 0.7071
-
-top_districts = district_mpi_climate_summary%>%filter(Mean_Rank_Scaled<0.4033)
-
-high_districts = district_mpi_climate_summary%>%filter(Mean_Rank_Scaled>0.7071)
-
-#Which states make up the top quartile of districts? 
-top_states = top_districts%>%group_by(State)%>%count()
-  
-#plot in descending order#assign order to prop variable
-prop_order <-
-  top_states%>%
-  arrange(desc(n)) %>%
-  mutate(State = factor(State))
-
-topstates_plot = top_states%>%mutate(State = factor(State, levels = prop_order$State, ordered = TRUE))%>%ggplot(aes(x= State, y = n))+geom_col(aes(x=State), fill = "#440154FF")+theme_classic()+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  labs(x = "State/ Union Territory", y = "Number of districts")
-
-topstates_plot
-```
