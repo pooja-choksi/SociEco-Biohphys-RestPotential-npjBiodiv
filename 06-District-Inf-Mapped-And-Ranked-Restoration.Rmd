@@ -64,7 +64,7 @@ district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(Dist
 "Koch_Bihar" = "Koch Bihar",
 "Bara Banki" = "Barabanki",
 "North_Twenty_Four_Parganas" = "North 24 Parganas",
-"Paschim Medinipur" = "Pashchim Medinipur",
+"Paschim_Medinipur" = "Pashchim Medinipur",
 "Purba_Medinipur" = "Purba Medinipur", 
 "South_Twenty_Four_Parganas" = "South 24 Parganas", 
 "Nagapattinam" = "Nagappattinam",
@@ -73,7 +73,7 @@ district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(Dist
 "Virudhunagar" = "Virudunagar",
 "North District" = "North Sikkim",
 "South District" = "South Sikkim",
-"Chamrajanagar" = "Chamrajnagar",
+"Chamarajanagar" = "Chamrajnagar",
 "Chikkaballapura" = "Chikballapura",
 "Dhar " = "Dhar",
 "Kheri" = "Lakhimpur Kheri",
@@ -94,7 +94,7 @@ districts$NAME_2)   # elements in first NOT in second
 #come back to this later now that the data matches completely
 ```
 
-Create the people-centric ranking for each district and then the mean of the scale that goes from 0 to 1
+Create the people-centric ranking for each district and then the mean of the scale that goes from 0 to 1 as well as a district rank that goes from 1 to 447
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 
@@ -121,7 +121,16 @@ district_mpi_climate_summary  <- district_mpi_climate_summary [order(district_mp
 district_mpi_climate_summary= district_mpi_climate_summary%>% mutate(Population_Rank = match(Total_Population_sum, unique(Total_Population_sum)))
 
 #Create the average rank of all three variables
-district_mpi_climate_summary = district_mpi_climate_summary%>%mutate(Mean_Rank = rowMeans(select(., MPI_rank:Population_Rank)))
+district_mpi_climate_summary = district_mpi_climate_summary%>%rowwise()%>%dplyr::mutate(Mean_Rank = mean(c(MPI_rank, Vulnerability_Rank,Population_Rank)))
+
+#Create the average rank of all three variables
+district_mpi_climate_summary%>%dplyr::mutate(Mean_Rank = rowMeans(.[, 18:20]))
+
+#rearrange the districts in descending order of MPI
+district_mpi_climate_summary  <- district_mpi_climate_summary [order(district_mpi_climate_summary$Mean_Rank, decreasing=TRUE),]
+
+#assign each district a rank
+district_mpi_climate_summary= district_mpi_climate_summary%>%mutate(Combined_Rank = match(Mean_Rank, unique(Mean_Rank)))
 
 range01 <- function(x){(x-min(x))/(max(x)-min(x))}
 
@@ -129,8 +138,6 @@ district_mpi_climate_summary$Mean_Rank_Scaled = range01(district_mpi_climate_sum
 
 #Combine the spatial data with district level data
 districts <-  sp::merge(districts, district_mpi_climate_summary, by.x = c("NAME_2"),by.y = c("District_Name"),duplicateGeoms = T)
-
-setwd("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-District-Shapefiles\\")
 
 writeOGR(obj = districts, layer = "districts", dsn= "District-MPI-Climate-Pop-Merged-V3.shp", driver = "ESRI Shapefile")
 

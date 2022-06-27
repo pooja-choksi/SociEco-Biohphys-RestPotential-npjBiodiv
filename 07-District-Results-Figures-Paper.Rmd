@@ -70,8 +70,6 @@ topstates_plot = top_states%>%mutate(State = factor(State, levels = prop_order$S
 
 topstates_plot
 
-c("Common land", "Forest land", "Individual land", "Unaccounted land"), values=c("#999933","#117733","#E69F00", "#D55E00")
-
 ```
 
 QUESTION 2: Which land tenures within districts provide the largest number of hectares for restoration?
