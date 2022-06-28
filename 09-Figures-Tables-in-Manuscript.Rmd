@@ -1,0 +1,96 @@
+---
+title: "People-centric restoration: Figures and tables in manuscript"
+author: "Pooja Choksi"
+date: '2022-06-27'
+output: html_document
+---
+
+In this script, we use the district level land use, multidimensional poverty, climate vulnerability and population data along with new sources of data for question 4 of this study.  
+
+
+```{r setup, include=FALSE}
+library(ggplot2)
+library(forcats)
+library(dplyr)
+library(qcc)
+library(gridExtra)
+library(viridis)
+#get color blind friendly colors 
+library(pals)
+
+```
+
+
+Read in all the data from previous scripts that we need for plots and tables.
+
+```{r message = FALSE, warning=FALSE, include=TRUE}
+
+#For all questions, we need this data
+districts_info = read.csv("District-Climate-MPI-Biophys-Ranked.csv")
+
+#For question 4 (population characteristics, we need the following datasets)
+landless_landholders = read.csv("Districts-Land-Census.csv")
+
+```
+
+## SYNERGIES AND TRADE-OFFS BETWEEN SEVERAL FACTORS
+
+The chunk of code below creates a scatterplot where each district's biophysical potential rank and people-centric restoration opportunity rank is plotted. 
+
+We also subset the data into the different quantiles to have a closer look at which districts are in the top and bottom quantiles and how that compares to their biophysical potential.
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+
+#All the land tenures together
+#first categorize the three variables
+
+districts_info$tenure_max  = apply(districts_info[c("Ttl_In_", "Ttl_Cm_", "Ttl_Fr_")], 1, max)
+
+districts_info = districts_info%>%mutate(tenure_max_cat = 
+ case_when(tenure_max == Ttl_In_ ~ "Individual",
+           tenure_max == Ttl_Cm_ ~ "Common",
+           tenure_max == Ttl_Fr_ ~ "Forest", 
+           TRUE ~ "NA"))
+
+biophys_people_scale = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = strass_rank, y= Cmbnd_R, shape = tenure_max_cat, color = Vlnrb_I, size = MPI_Dst), alpha = 0.5)+ theme_bw()+scale_color_viridis(option = "D")+
+  scale_y_continuous(name = "District Rank according to biophysical potential") + scale_x_continuous(name="District Rank according to people-centric variables")+ 
+   geom_vline(xintercept =225, linetype="dashed") + geom_hline(yintercept = 170, linetype="dashed")
+
+biophys_people_scale
+
+#report the synergies and trade-offs
+#Biophysical factors v/s people-centric factors 
+#split the data into 4 equal parts 
+summary(districts_info$Cmbnd_R)
+
+districts_info = districts_info%>%mutate(People_Cat = case_when(
+  Cmbnd_R<=94.75 ~ "High",
+  Cmbnd_R>=94.76 & Cmbnd_R<170.32 ~ "Medium",
+  Cmbnd_R>=170.32 & Cmbnd_R< 251.25 ~ "Low",
+  Cmbnd_R>=251.25 & Cmbnd_R< 341 ~"Very low",
+  TRUE~ "NA"))
+
+summary(districts_info$strass_rank)
+
+districts_info = districts_info%>%mutate(Strass_Cat = case_when(
+  strass_rank<=113.8 ~ "High",
+  strass_rank>=113.9 & strass_rank<226.0 ~ "Medium",
+  strass_rank>=226.0 & strass_rank<338.2 ~ "Low",
+  strass_rank>=338.2 & strass_rank<451 ~"Very low",
+  TRUE~ "NA"))
+
+high_both = districts_info%>%filter(Strass_Cat == "High" & People_Cat == "High")
+
+low = districts_info%>%filter(Strass_Cat == "Very low" & People_Cat == "High")
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
