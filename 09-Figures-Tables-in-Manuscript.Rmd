@@ -39,7 +39,7 @@ The chunk of code below creates a scatterplot where each district's biophysical 
 
 We also subset the data into the different quantiles to have a closer look at which districts are in the top and bottom quantiles and how that compares to their biophysical potential.
 
-```{r message=FALSE, warning=FALSE, include=TRUE}
+```{r message=FALSE, warning=FALSE, include=TRUE, echo= FALSE}
 
 #All the land tenures together
 #first categorize the three variables
@@ -85,12 +85,119 @@ low = districts_info%>%filter(Strass_Cat == "Very low" & People_Cat == "High")
 
 ```
 
-## Including Plots
+## CHARACTERISTICS OF POPULATION IN HIGH PEOPLE_CENTRIC RESTORATION OPPORTUNITY AREAS
 
-You can also embed plots, for example:
+1. Number of land-owning and landless households in the district.
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r pressure, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+#first check if all state names match 
+state_names_missing =  setdiff(landless_landholders$State, districts_info$NAME_1)   # elements in first NOT in second
+
+state_names_missing 
+
+#recode the state names to match the spatial data 
+districts_info = districts_info%>%dplyr::mutate(NAME_1 = recode(NAME_1, "Andaman and Nicobar" = "Andaman And Nicobar Islands", "Jammu and Kashmir" = "Jammu And Kashmir"))
+
+#aggregate data of interest to the district level
+land_details = landless_landholders%>%group_by(District, State, State.lgd.code, District.lgd.code)%>%
+  summarise_at(.vars = vars(Households.with.land, Households.without.land,Households.having.kisan.credit.card), .funs = c(sum = "sum"))
+
+#Check for district names that don't match
+district_names_missing =  setdiff(land_details$District, districts_info$NAME_2)   # elements in first NOT in second
+
+#join the data on districts and the land/landless households data aggregated to district level
+trial = merge(districts_info, land_details[c("District","State", "District.lgd.code", "Households.with.land_sum", "Households.without.land_sum", "Households.having.kisan.credit.card_sum")], by.x = c("NAME_2", "NAME_1"), by.y= c("District", "State"))
+
+#find the districts with no match 
+missing_in_trial =  setdiff(districts_info$NAME_2,
+trial$NAME_2)   # elements in first NOT in second
+
+#change the state name of Leh and Ladakh
+districts_info$NAME_1[139]="Ladakh"
+
+#recode the district names to match the spatial data 
+districts_info = districts_info%>%dplyr::mutate(NAME_2 = recode(NAME_2, 
+"Panch Mahals" = "Panch Mahals",
+"Leh (Ladakh)" = "Leh Ladakh", 
+"Lahul & Spiti" = "Lahul And Spiti",
+"Kodarma" = "Koderma",
+"Gurgaon" = "Gurugram",
+"Pashchimi Singhbhum" = "West Singhbhum",
+"Purba Champaran"= "Purbi Champaran",
+"Kabeerdham" = "Kabirdham",
+"Koriya" = "Korea",
+"The Dangs" = "Dang",
+"Purbi Singhbhum"= "West Singhbhum",                                "Saraikela-kharsawan" = "Saraikela Kharsawan", 
+# "The_Nilgiris" = "The Nilgiris", 
+# "Kanshiram_Nagar" = "Kanshiram Nagar",
+# "Sant_Kabir_Nagar" = "Sant Kabir Nagar",
+# "Sant_Ravidas_Nagar_(Bhadohi)" = "Sant Ravi Das Nagar",
+# "Siddharthnagar" = "Siddharth Nagar",
+# "Tehri_Garhwal" = "Tehri Garhwal",
+# "Udham_Singh_Nagar" = "Udham Singh Nagar",
+"Dakshin Dinajpur" = "Dinajpur Dakshin", 
+# "Koch_Bihar" = "Koch Bihar",
+# "Bara Banki" = "Barabanki",
+"North 24 Parganas" = "24 Paraganas North",
+"Paschim_Medinipur" = "Pashchim Medinipur",
+"Purba_Medinipur" = "Purba Medinipur", 
+"South 24 Parganas" = "24 Paraganas South", 
+# "Nagapattinam" = "Nagappattinam",
+# "Mahrajganj" = "Maharajganj",
+"Uttar Dinajpur" = "Dinajpur Uttar",
+"Virudunagar" = "Virudhunagar",
+"North Sikkim" = "North District",
+"South Sikkim" = "South District",
+"Chamrajnagar" = "Chamarajanagara",
+"Chikballapura" = "Chikkaballapura",
+"Bellary" = "Ballari",
+"Davanagere" = "Davangere",
+"Gulbarga"= "Kalaburagi",
+"Mysore" = "Mysuru",
+"Shimoga" = "Shivamogga",
+"Tumkur" = "Tumakuru",
+"Bid" = "Beed",
+"Buldana" = "Buldhana",
+"Nellore" = "Spsr Nellore",
+# "Papumpare" = "Papum Pare",
+"Garhchiroli" = "Gadchiroli",
+"Gondiya" = "Gondia",
+"Chittaurgarh" = "Chittorgarh",
+"Jalor" = "Jalore",
+"Jhunjhunun" = "Jhunjhunu",
+"Kancheepuram" = "Kanchipuram",
+"Viluppuram" = "Villupuram",
+"Mahbubnagar" = "Mahabubnagar",
+"Allahabad" = "Prayagraj",
+"Faizabad" = "Ayodhya",
+"Kushinagar" = "Kushi Nagar",
+"Lakhimpur Kheri" = "Kheri",
+"Sant Kabir Nagar" = "Sant Kabeer Nagar",
+"Hardwar" = "Haridwar",
+"Uttarkashi" = "Uttar Kashi",
+"Barddhaman" = "Barddhaman ",
+"Darjiling" = "Darjeeling",
+"Hugli" = "Hugli ",
+"North and Middle Andaman" = "North And Middle Andaman",
+# "Khandwa (East Nimar)" = "East Nimar", 
+"Ahmadnagar" = "Ahmednagar", 
+"Bagalkot" = "Bagalkote", 
+"Bandipore" = "Bandipora", 
+"Bangalore Rural" = "Bengaluru Rural",
+"Bangalore" = "Bengaluru Urban",
+"Belgaum" = "Belagavi",
+"Chikmagalur" = "Chikkamagaluru", 
+"South Andaman" = "South Andamans", 
+"Visakhapatnam" = "Visakhapatanam",
+"Pashchim Medinipur" = "Medinipur West",
+"Puruliya" = "Purulia",
+"Morigaon" = "Marigaon", 
+"Thoothukkudi" = "Tuticorin"))
+
+#join the data on districts and the land/landless households data aggregated to district level
+final = merge(districts_info, land_details[c("District","State", "District.lgd.code", "Households.with.land_sum", "Households.without.land_sum", "Households.having.kisan.credit.card_sum")], by.x = c("NAME_2", "NAME_1"), by.y= c("District", "State"))
+
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
