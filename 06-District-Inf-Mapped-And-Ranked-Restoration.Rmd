@@ -32,138 +32,146 @@ districts = readOGR("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoratio
 district_mpi_climate_summary = read.csv("District-Climate-MPI-Ranked.csv")
 
 ```
-CLEAN THE DISTRCIT SPATIAL DATA TO MATCH THE CLIMATE, MPI DATA AT DISTRICT LEVEL
+
+CLEAN THE DISTRCIT SPATIAL DATA TO MATCH THE DISTRICT LEVEL CLIMATE, MPI AND OTHER SOCIO- ECONOMIC DATA 
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 
 #first check if all state names match 
 state_names_missing =  setdiff(districts$NAME_1, district_mpi_climate_summary$State)   # elements in first NOT in second
 
+state_names_missing
+
 #recode the state names to match the spatial data 
-district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(State = recode(State, "Andaman Nicobar UT" = "Andaman and Nicobar", "Daman Diu" = "Daman and Diu", "NCT_Delhi" = "NCT of Delhi", "Jammu And Kashmir" = "Jammu and Kashmir", "Dadra Nagarhaveli UT" = "Dadra and Nagar Haveli", "Tamil_Nadu" = "Tamil Nadu", "West_Bengal" = "West Bengal"))
+district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(State = recode(State, "Jammu And Kashmir" ="Jammu and Kashmir"))
 
 state_names_missing 
 #still missing districts are Union territories for which we don't have climate vulnerability data
 
 #Check for district names that don't match
-district_names_missing =  setdiff(districts$NAME_2, district_mpi_climate_summary$District_Name)   # elements in first NOT in second
+district_names_missing =  setdiff(district_mpi_climate_summary$District_Name, districts$NAME_2)   # elements in first NOT in second
+
+#to compare names, create a dataframe of the districts shapefile
+districts_df <- as(districts, "data.frame")
 
 #recode the district names to match the spatial data 
-trial_changed = district_mpi_climate_summary%>%dplyr::mutate(District_Name = recode(District_Name, "Kanker" = "Uttar Bastar Kanker",
-"Sonepur" ="Subarnapur",
-"Boudh" ="Bauda",
-"Shopian" ="Shupiyan",
-"Kamrup Metro" = "Kamrup Metropolitan",
-"Deogarh" ="Debagarh",
-"Janjgir_Champa" = "Janjgir-Champa",
-"North_East" = "North East",
-"North_West" = "North West",
-"South_West" = "South West",
+district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(District_Name = recode(District_Name, 
+#"Kanker" = "Uttar Bastar Kanker",
+# "Sonepur" ="Subarnapur",
+"Baudh" ="Bauda",
+# "Shopian" ="Shupiyan",
+# "Kamrup Metro" = "Kamrup Metropolitan",
+# "Deogarh" ="Debagarh",
+"Janjgir - Champa" = "Janjgir-Champa",
+# "North_East" = "North East",
+# "North_West" = "North West",
+# "South_West" = "South West",
 "Panchmahal" = "Panch Mahals",
 "Sabarkantha" = "Sabar Kantha",
 "Banaskantha" = "Banas Kantha",
-"Leh Ladakh" = "Leh (Ladakh)", 
+"Leh" = "Leh (Ladakh)", 
 "Lahul And Spiti" ="Lahul & Spiti",
-"West Singhbhum" = "Pashchimi Singhbhum",
-"West Singhbhum" = "Purbi Singhbhum",                                "Saraikela Kharsawan" = "Saraikela-kharsawan", 
-"Dhar " = "Dhar", 
-"North  District"= "North District",
-"The_Nilgiris" = "The Nilgiris", 
-"Kanshiram_Nagar" = "Kasganj", #new name 
-"Sant Kabeer Nagar" = "Sant Kabir Nagar",
-"Bhadohi" = "Sant Ravi Das Nagar",
-"Dinajpur Dakshin" = "Dakshin Dinajpur", 
-"Coochbehar" = "Koch Bihar",
+# "West Singhbhum" = "Pashchimi Singhbhum",
+# "West Singhbhum" = "Purbi Singhbhum",   
+"Saraikela Kharsawan" = "Saraikela-kharsawan", 
+# "Dhar " = "Dhar", 
+"Kaimur (Bhabua)" = "Kaimur",
+# "North  District"= "North District",
+# "The_Nilgiris" = "The Nilgiris", 
+"Kanshiram Nagar" = "Kasganj", #new name 
+# "Sant Kabeer Nagar" = "Sant Kabir Nagar",
+"Sant Ravidas Nagar (Bhadohi)" = "Sant Ravi Das Nagar",
+# "Dinajpur Dakshin" = "Dakshin Dinajpur", 
+# "Coochbehar" = "Koch Bihar",
 "Dohad" = "Dahod",
-"24 Paraganas North" = "North 24 Parganas",
-"Medinipur West" = "Pashchim Medinipur",
-"Medinipur East" = "Purba Medinipur", 
-"24 Paraganas South" = "South 24 Parganas",
+"North Twenty Four Parganas" = "North 24 Parganas",
+"Paschim Medinipur" = "Pashchim Medinipur",
+# "Medinipur East" = "Purba Medinipur", 
+"South Twenty Four Parganas" = "South 24 Parganas",
 "Baramula" = "Baramulla",
 "Punch" = "Poonch",
-"Ferozepur" ="Firozpur",
-"Jalandar" = "Jalandhar",
-"Sri Muktsar Sahib" ="Muktsar",
-"S.A.S Nagar" = "Sahibzada Ajit Singh Nagar",
-"Rudra Prayag" = "Rudraprayag",
-"Udam Singh Nagar"= "Udham Singh Nagar",
-"Dinajpur Uttar" = "Uttar Dinajpur", 
+# "Ferozepur" ="Firozpur",
+# "Jalandar" = "Jalandhar",
+# "Sri Muktsar Sahib" ="Muktsar",
+# "S.A.S Nagar" = "Sahibzada Ajit Singh Nagar",
+# "Rudra Prayag" = "Rudraprayag",
+# "Udam Singh Nagar"= "Udham Singh Nagar",
+# "Dinajpur Uttar" = "Uttar Dinajpur", 
 "Mahrajganj" = "Maharajganj",
 "Virudhunagar" ="Virudunagar",
-"North (Sikkim)" = "North District",
-"South (Sikkim)" = "South District",
-"Saran(chhapra)" = "Saran",
-"Chamarajanagara" ="Chamrajnagar",
-"Spsr Nellore" = "Nellore",
-"Khamman" = "Khammam",
-"Raigad" = "Raigarh",
-"Koderma" = "Kodarma",
-"Gurugram" ="Gurgaon",
-"Purbi Champaran" = "Purba Champaran", 
+# "North (Sikkim)" = "North District",
+# "South (Sikkim)" = "South District",
+# "Saran(chhapra)" = "Saran",
+"Chamarajanagar" ="Chamrajnagar",
+"Sri Potti Sriramulu Nellore" = "Nellore",
+# "Khamman" = "Khammam",
+# "Raigad" = "Raigarh",
+# "Koderma" = "Kodarma",
+# "Gurugram" ="Gurgaon",
+# "Purbi Champaran" = "Purba Champaran", 
 "Kabirdham" = "Kabeerdham",
-"Korea" = "Koriya",
-"Dang" ="The Dangs",
+"Korea (Koriya)" = "Koriya",
+# "Dang" ="The Dangs",
 "Bara Banki" = "Barabanki",
-"Chikkaballapura" ="Chikballapura",
-"Ballari" = "Bellary",
-"Davangere" ="Davanagere",
-"Kalaburagi" ="Gulbarga",
-"Mysuru" ="Mysore",
-"Shimoga" = "Shivamogga",
-"Tumkur" = "Tumakuru",
-"Beed" ="Bid",
-"Buldhana" = "Buldana",
+# "Chikkaballapura" ="Chikballapura",
+# "Ballari" = "Bellary",
+# "Davangere" ="Davanagere",
+# "Kalaburagi" ="Gulbarga",
+# "Mysuru" ="Mysore",
+# "Shimoga" = "Shivamogga",
+# "Tumkur" = "Tumakuru",
+# "Beed" ="Bid",
+# "Buldhana" = "Buldana",
 "Papumpare" = "Papum Pare",
-"Gondia" = "Gondiya",
-"Chittorgarh" = "Chittaurgarh",
-"Jalore" ="Jalor",
-"Jhunjhunu" ="Jhunjhunun",
-"Kanchipuram" ="Kancheepuram",
-"Villupuram" ="Viluppuram",
-"Mahabubnagar" = "Mahbubnagar",
-"Prayagraj" = "Allahabad",
-"Ayodhya" = "Faizabad",
-"Kushi Nagar" = "Kushinagar",
+# "Gondia" = "Gondiya",
+# "Chittorgarh" = "Chittaurgarh",
+# "Jalore" ="Jalor",
+# "Jhunjhunu" ="Jhunjhunun",
+# "Kanchipuram" ="Kancheepuram",
+# "Villupuram" ="Viluppuram",
+# "Mahabubnagar" = "Mahbubnagar",
+# "Prayagraj" = "Allahabad",
+# "Ayodhya" = "Faizabad",
+# "Kushi Nagar" = "Kushinagar",
 "Kheri" = "Lakhimpur Kheri",
-"Haridwar" = "Hardwar",
-"Uttar Kashi" ="Uttarkashi",
-"Barddhaman " = "Barddhaman",
-"Darjeeling" = "Darjiling",
-"Hooghly" = "Hugli",
-"North & Middle Andaman" = "North And Middle Andaman",
+# "Haridwar" = "Hardwar",
+# "Uttar Kashi" ="Uttarkashi",
+# "Barddhaman " = "Barddhaman",
+# "Darjeeling" = "Darjiling",
+# "Hooghly" = "Hugli",
+# "North & Middle Andaman" = "North And Middle Andaman",
 "Khandwa (East Nimar)" = "East Nimar", 
-"Ahmednagar" = "Ahmadnagar", 
-"Bagalkote" ="Bagalkot", 
-"Bandipora" ="Bandipore", 
-"Bengaluru Rural" = "Bangalore Rural",
-"Bengaluru Urban" = "Bangalore",
-"Belagavi" = "Belgaum",
-"Chikkamagaluru" = "Chikmagalur", 
-"South Andaman" = "South Andamans", 
-"Visakhapatanam" = "Visakhapatnam",
- "Purulia" ="Puruliya",
-"Nuh" ="Mewat",
+# "Ahmednagar" = "Ahmadnagar", 
+# "Bagalkote" ="Bagalkot", 
+# "Bandipora" ="Bandipore", 
+# "Bengaluru Rural" = "Bangalore Rural",
+# "Bengaluru Urban" = "Bangalore",
+# "Belagavi" = "Belgaum",
+# "Chikkamagaluru" = "Chikmagalur", 
+# "South Andaman" = "South Andamans", 
+# "Visakhapatanam" = "Visakhapatnam",
+#  "Purulia" ="Puruliya",
+# "Nuh" ="Mewat",
 "Mahamaya Nagar" = "Hathras",
-"Narsinghpur" ="Narsimhapur",
-"Marigaon" = "Morigaon", 
-"Tuticorin" = "Thoothukkudi",
+# "Narsinghpur" ="Narsimhapur",
+# "Marigaon" = "Morigaon", 
+# "Tuticorin" = "Thoothukkudi",
 "Shrawasti" = "Shravasti",
-"Siddharthnagar" = "Siddharth Nagar",
-"Budgam" ="Badgam", 
-"Khargone" = "West Nimar", 
-"Nabarangpur" ="Nabarangapur",
-"Sahebganj" ="Sahibganj",
+# "Siddharthnagar" = "Siddharth Nagar",
+# "Budgam" ="Badgam", 
+"Khargone (West Nimar)" = "West Nimar", 
+# "Nabarangpur" ="Nabarangapur",
+# "Sahebganj" ="Sahibganj",
 "Rangareddy" = "Ranga Reddy",
-"Howrah" = "Haora",
+# "Howrah" = "Haora",
 "Dakshin Bastar Dantewada" = "Dantewada",
 "Nagapattinam" = "Nagappattinam",
-"Dholpur" ="Dhaulpur",
-"Tehri_Garhwal" = "Tehri Garhwal",
+# "Dholpur" ="Dhaulpur",
+# "Tehri_Garhwal" = "Tehri Garhwal",
 "Gadchiroli" = "Garhchiroli"))
 
-#check again
 #Check for district names that don't match
-district_names_missing =  setdiff(trial_changed$District_Name,
+district_names_missing =  setdiff(district_mpi_climate_summary$District_Name,
 districts$NAME_2)   # elements in first NOT in second
 
 ```
@@ -173,9 +181,9 @@ SAVE THE FILES FOR NEXT SCRIPT
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 
 #Combine the spatial data with district level data
-districts <-  sp::merge(districts, district_mpi_climate_summary, by.x = c("NAME_2"),by.y = c("District_Name"),duplicateGeoms = T)
+districts_merged <-  sp::merge(districts, district_mpi_climate_summary, by.x = c("NAME_2", "NAME_1"),by.y = c("District_Name", "State"),duplicateGeoms = T)
 
-writeOGR(obj = districts, layer = "districts", dsn= "District-MPI-Climate-Pop-Merged-V3.shp", driver = "ESRI Shapefile")
+writeOGR(obj = districts_merged, layer = "districts", dsn= "District-MPI-Climate-Pop-Merged-V3.shp", driver = "ESRI Shapefile")
 
 ```
 

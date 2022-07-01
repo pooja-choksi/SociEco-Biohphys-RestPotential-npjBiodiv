@@ -39,8 +39,8 @@ EXTRACT MEAN BIOPHYSICAL POTENTIAL FOR EACH DISTRICT AND RANK DISTRICTS ACCORDIN
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 
 #remove the districts which don't have a value for climate vulnerability 
-districts <- districts[!is.na(districts$clmt_v_),]
-#N = 452 after removing the districts without CV 
+districts <- districts[!is.na(districts$MPI_rnk),]
+#N = 565 after removing the districts without CV (one districts has three parts). the total is still 563 districts
 
 #extract mean or majority (for wri data) of raster for each district
 brancalion_extracted = raster::extract(brancalion, districts, fun = mean, na.rm = T, small = T, sp=TRUE)
@@ -81,13 +81,13 @@ potential_extracted  <- potential_extracted [order(potential_extracted$Strassbur
 potential_extracted= potential_extracted%>% mutate(strass_rank = match(Strassburg_India_Clipped, unique(Strassburg_India_Clipped)))
 
 #merge the extracted data with districts shapefile
-districts = sp::merge(districts, potential_extracted[c("strass_rank", "branca_rank", "wri_rank","Potapov_India_Clipped", "Strassburg_India_Clipped", "Brancalion_India_Clipped", "NAME_1", "NAME_2")], by.x = c("NAME_1","NAME_2"), by.y= c("NAME_1", "NAME_2"))
+districts_final = sp::merge(districts, potential_extracted[c("strass_rank", "branca_rank", "wri_rank","Potapov_India_Clipped", "Strassburg_India_Clipped", "Brancalion_India_Clipped", "NAME_1", "NAME_2")], by.x = c("NAME_1","NAME_2"), by.y= c("NAME_1", "NAME_2"), duplicateGeoms = T)
 
-writeOGR(districts, layer = "districts", dsn= "District-MPI-Climate-Pop-Merged-Biophys.shp", driver = "ESRI Shapefile")
+writeOGR(districts_final, layer = "districts_final", dsn= "District-MPI-Climate-Pop-Merged-Biophys.shp", driver = "ESRI Shapefile")
 
 #also create a dataframe from the shapefile to use for analysis below 
-districts_df <- as(districts, "data.frame")
+districts_df_final <- as(districts_final, "data.frame")
 
-write.csv(districts_df, "District-Climate-MPI-Biophys-Ranked.csv")
+write.csv(districts_df_final, "District-Climate-MPI-Biophys-Ranked.csv")
 
 ```
