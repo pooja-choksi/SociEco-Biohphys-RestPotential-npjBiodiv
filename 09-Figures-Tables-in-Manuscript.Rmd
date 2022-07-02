@@ -41,6 +41,9 @@ We also subset the data into the different quantiles to have a closer look at wh
 #All the land tenures together
 #first categorize the three variables
 
+#Remove the duplicate in Assam, so we will have only 562 districts 
+districts_info = districts_info [!duplicated(districts_info[c("NAME_1","NAME_2")]),]
+
 districts_info$tenure_max  = apply(districts_info[c("Ttl_In_", "Ttl_Cm_", "Ttl_Fr_")], 1, max)
 
 districts_info = districts_info%>%mutate(tenure_max_cat = 
@@ -49,9 +52,9 @@ districts_info = districts_info%>%mutate(tenure_max_cat =
            tenure_max == Ttl_Fr_ ~ "Forest", 
            TRUE ~ "NA"))
 
-biophys_people_scale = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = strass_rank, y= Cmbnd_R, shape = tenure_max_cat, color = Vlnrb_I, size = MPI_Dst), alpha = 0.5)+ theme_bw()+scale_color_viridis(option = "D")+
-  scale_y_continuous(name = "District Rank according to biophysical potential") + scale_x_continuous(name="District Rank according to people-centric variables")+ 
-   geom_vline(xintercept =225, linetype="dashed") + geom_hline(yintercept = 170, linetype="dashed")
+biophys_people_scale = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = strass_rank, y= Cmbnd_R, shape = tenure_max_cat, color = Clmt_v_, size = MPI_Dst), alpha = 0.5)+ theme_bw()+scale_color_viridis(option = "D")+
+  scale_y_continuous(name = "District Rank according to people-centric restoration opportunity") + scale_x_continuous(name="District Rank according to biophysical restoration potential")+ 
+   geom_vline(xintercept =280, linetype="dashed") + geom_hline(yintercept = 206.5, linetype="dashed")
 
 biophys_people_scale
 
@@ -61,24 +64,27 @@ biophys_people_scale
 summary(districts_info$Cmbnd_R)
 
 districts_info = districts_info%>%mutate(People_Cat = case_when(
-  Cmbnd_R<=94.75 ~ "High",
-  Cmbnd_R>=94.76 & Cmbnd_R<170.32 ~ "Medium",
-  Cmbnd_R>=170.32 & Cmbnd_R< 251.25 ~ "Low",
-  Cmbnd_R>=251.25 & Cmbnd_R< 341 ~"Very low",
+  Cmbnd_R<=109.2 ~ "High",
+  Cmbnd_R>=109.2 & Cmbnd_R<208.1 ~ "Medium",
+  Cmbnd_R>=208.1 & Cmbnd_R<305.8 ~ "Low",
+  Cmbnd_R>=305.8 & Cmbnd_R< 413 ~"Very low",
   TRUE~ "NA"))
 
 summary(districts_info$strass_rank)
 
 districts_info = districts_info%>%mutate(Strass_Cat = case_when(
-  strass_rank<=113.8 ~ "High",
-  strass_rank>=113.9 & strass_rank<226.0 ~ "Medium",
-  strass_rank>=226.0 & strass_rank<338.2 ~ "Low",
-  strass_rank>=338.2 & strass_rank<451 ~"Very low",
+  strass_rank<=140.2 ~ "High",
+  strass_rank>=140.2 & strass_rank<280.1 ~ "Medium",
+  strass_rank>=280.1 & strass_rank<419.8 ~ "Low",
+  strass_rank>=419.8 & strass_rank<560 ~"Very low",
   TRUE~ "NA"))
 
 high_both = districts_info%>%filter(Strass_Cat == "High" & People_Cat == "High")
 
-low = districts_info%>%filter(Strass_Cat == "Very low" & People_Cat == "High")
+very_low = districts_info%>%filter(Strass_Cat == "Very low" & People_Cat == "High")
+
+low = districts_info%>%filter(Strass_Cat == "Low" & People_Cat == "High")
+
 
 ```
 
