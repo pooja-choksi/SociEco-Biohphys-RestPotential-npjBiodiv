@@ -27,6 +27,8 @@ brancalion <- raster("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restorati
 
 strassburg = raster("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Restoration_Potential_Studies\\India_Clipped\\Strassburg_india_Clipped.tif")
 
+strassburg = raster("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Restoration_Potential_Studies\\Strassburg_et_al_2020\\scen_cb-bd_gradient.tif")
+
 wri = raster("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Restoration_Potential_Studies\\India_Clipped\\Potapov_India_Clipped.tif")
 
 #district shapefile with info on the people-centric variables
@@ -39,8 +41,8 @@ EXTRACT MEAN BIOPHYSICAL POTENTIAL FOR EACH DISTRICT AND RANK DISTRICTS ACCORDIN
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 
 #remove the districts which don't have a value for climate vulnerability 
-districts <- districts[!is.na(districts$MPI_rnk),]
-#N = 565 after removing the districts without CV (one districts has three parts). the total is still 563 districts
+districts <- districts[!is.na(districts$Men_Rnk),]
+#N = 563 after removing the districts without CV (one districts has three parts). the total is still 563 districts
 
 #extract mean or majority (for wri data) of raster for each district
 brancalion_extracted = raster::extract(brancalion, districts, fun = mean, na.rm = T, small = T, sp=TRUE)
@@ -75,7 +77,7 @@ potential_extracted= potential_extracted%>% mutate(wri_rank = match(Potapov_Indi
 
 #3. Strassburg
 #reorder the districts in descending order of MPI
-potential_extracted  <- potential_extracted [order(potential_extracted$Strassburg_India_Clipped, decreasing=TRUE),]
+potential_extracted  <- potential_extracted [order(potential_extracted$Strassburg_India_Clipped , decreasing=TRUE),]
 
 #assign each district a rank
 potential_extracted= potential_extracted%>% mutate(strass_rank = match(Strassburg_India_Clipped, unique(Strassburg_India_Clipped)))

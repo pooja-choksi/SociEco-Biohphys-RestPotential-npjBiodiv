@@ -52,9 +52,9 @@ districts_info = districts_info%>%mutate(tenure_max_cat =
            tenure_max == Ttl_Fr_ ~ "Forest", 
            TRUE ~ "NA"))
 
-biophys_people_scale = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = strass_rank, y= Cmbnd_R, shape = tenure_max_cat, color = Clmt_v_, size = MPI_Dst), alpha = 0.5)+ theme_bw()+scale_color_viridis(option = "D")+
+biophys_people_scale = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = strass_rank, y= Cmbnd_R, shape = tenure_max_cat, color = Clmt_v_, size = MPI_Dst), alpha = 0.6)+ theme_bw()+scale_color_viridis(option = "D")+
   scale_y_continuous(name = "District Rank according to people-centric restoration opportunity") + scale_x_continuous(name="District Rank according to biophysical restoration potential")+ 
-   geom_vline(xintercept =280, linetype="dashed") + geom_hline(yintercept = 206.5, linetype="dashed")
+   geom_vline(xintercept =280.1068, linetype="dashed") + geom_hline(yintercept = 124.1441, linetype="dashed")
 
 biophys_people_scale
 
@@ -64,10 +64,10 @@ biophys_people_scale
 summary(districts_info$Cmbnd_R)
 
 districts_info = districts_info%>%mutate(People_Cat = case_when(
-  Cmbnd_R<=109.2 ~ "High",
-  Cmbnd_R>=109.2 & Cmbnd_R<208.1 ~ "Medium",
-  Cmbnd_R>=208.1 & Cmbnd_R<305.8 ~ "Low",
-  Cmbnd_R>=305.8 & Cmbnd_R< 413 ~"Very low",
+  Cmbnd_R<=69.0 ~ "High", #under first quantile
+  Cmbnd_R>=69.0 & Cmbnd_R<119.0 ~ "Medium", #between first quantile and median
+  Cmbnd_R>=119.0 & Cmbnd_R<178.8 ~ "Low", #between median and third quantile
+  Cmbnd_R>=178.8 & Cmbnd_R< 300 ~"Very low",
   TRUE~ "NA"))
 
 summary(districts_info$strass_rank)
@@ -85,6 +85,8 @@ very_low = districts_info%>%filter(Strass_Cat == "Very low" & People_Cat == "Hig
 
 low = districts_info%>%filter(Strass_Cat == "Low" & People_Cat == "High")
 
+#Which states are the high -high potential districts in?
+high_states = high_both%>%group_by(NAME_1)%>%count()
 
 ```
 

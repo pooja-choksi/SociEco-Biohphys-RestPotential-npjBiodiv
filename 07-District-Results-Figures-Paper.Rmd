@@ -41,12 +41,14 @@ We look at the top and bottom quantile of the mean rank of districts and discuss
 #Determine the top and bottom quantile of districts 
 summary(district_mpi_climate_summary$Mean_Rank_Scaled)
 
-#1st q = 0.4033
-#3rd q= 0.7071
+#1st q = 0.3221
+#3rd q= 0.6429
 
-top_districts = district_mpi_climate_summary%>%filter(Mean_Rank_Scaled<0.4033)
+top_districts = district_mpi_climate_summary%>%filter(Mean_Rank_Scaled<0.3221)
 
-high_districts = district_mpi_climate_summary%>%filter(Mean_Rank_Scaled>0.7071)
+high_districts = district_mpi_climate_summary%>%filter(Mean_Rank_Scaled>0.6429)
+
+middle_districts = district_mpi_climate_summary%>%filter(Mean_Rank_Scaled >0.3221 & Mean_Rank_Scaled<0.6429)
 
 ```
 
@@ -81,7 +83,11 @@ PLOT OF THE DISTRIBUTION OF EACH LAND TENURE IN THE TOP DISTRICTS AND REPORT % o
 #wide to long
 top_district_long = reshape(top_districts, direction='long', varying=c('Total_Indiv_sum', 'Total_Common_sum', 'Total_Forest_sum', 'Total_Unaccounted_sum'), timevar= 'Land_Tenure', times=c('Individual', 'Common_NonForest', 'Forest', 'Unaccounted'),
 v.names= 'Total_Hectares',
-idvar=c('State', 'Total_Population_sum', 'X', "MPI_District", "Number_of_MPI_PeopleDistrict", "Event", "Exposure", "Sensitivity",   "Adaptive.Capacity", "Vulnerability.Index", "climate_vulnerable_weighted", "MPI_rank", "Vulnerability_Rank", "Population_Rank", "Mean_Rank", "Mean_Rank_Scaled", "Total_hectares_for_prop_sum"))
+idvar=c('State', 'Total_Population_sum', 'X', "MPI_District", "Number_of_MPI_PeopleDistrict", "Living_standards", "MPI_rank", "Vulnerability_Rank", "Mean_Rank", "Mean_Rank_Scaled", "Total_hectares_for_prop_sum", "District_Name",
+        "Total_Household_sum", "forests_land_sum", "non_agricultural_land_sum", "barren_uncultivable_land_sum", 
+        "pasture_grazing_land_sum", "misc_tree_crop_land_sum",
+        "culturable_wasteland_sum", "fallow_other_than_current_fallow_land_sum", "net_sown_area_sum", "current_fallow_land_sum", "total_irrigated_land_sum", "total_unirrigated_land_sum", "District_Code", "State_Code", 
+        "Climate_vulnerability_index", "Combined_Rank"))
 
 #plot of the distribution of land tenure in top districts
 tenure_topdistricts = ggplot()+geom_histogram(data= top_districts, aes(x=Total_Forest_sum), fill ="#117733", alpha=0.5, binwidth = 300000)+geom_histogram(data = top_districts, aes(x=Total_Common_sum), fill = "#999933", alpha =0.5, binwidth = 300000)+ geom_histogram(data = top_districts, aes(x= Total_Indiv_sum), fill = "#E69F00", alpha= 0.5, binwidth = 300000)+ theme_classic()+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+ labs(x = "Total number of hectares", y = "Freqeuncy")
@@ -96,5 +102,57 @@ tenure_topdistricts_report= tenure_topdistricts_report%>%mutate(tenure_total = c
 tenure_topdistricts_report = tenure_topdistricts_report%>%mutate(tenure_prop = (hectares_category/tenure_total)*100)
 
 #see DF to report the distribution
+
+
+##DISTRICT PLOT WITH SATURATION CURVES
+
+#rearrange tenure common in descending order
+top_dists_rearranged <- top_districts[order(top_districts$Total_hectares_for_prop_sum, decreasing=TRUE),]
+
+#add cumulative column to the data frame
+top_dists_rearranged[,"cum_indiv_hectares"] <- cumsum(top_dists_rearranged$Total_Indiv_sum)
+
+top_dists_rearranged[,"cum_common_hectares"] <- cumsum(top_dists_rearranged$Total_Common_sum)
+
+top_dists_rearranged[,"cum_forest_hectares"] <- cumsum(top_dists_rearranged$Total_Forest_sum)
+
+top_dists_rearranged[,"cum_unaccounted_hectares"] <- cumsum(top_dists_rearranged$Total_Unaccounted_sum)
+
+top_dists_rearranged[,"cum_total_population"] <- cumsum(top_dists_rearranged$Total_Population_sum)
+
+#find duplicate district names
+duplicated_districts = 
+top_dists_rearranged[duplicated(top_dists_rearranged$District_Name), ]
+
+#rename the duplicate districts to be able to plot in descending 
+top_dists_rearranged = top_dists_rearranged%>%mutate(District_Name = case_when(District_Name == "Aurangabad" & State == "Bihar" ~ "Aurangabad_2", District_Name == "Bijapur" & State == "Karnataka" ~ "Bijapur_2", District_Name == "Bilaspur" & State == "Himachal Pradesh" ~ "Bilaspur_2", District_Name == "Hamirpur" & State== "Himachal Pradesh"~ "Hamirpur_2", District_Name == "Pratapgarh" & State == "Rajasthan" ~ "Pratapgarh_2", District_Name== "Raigarh" & State == "Maharashtra" ~ "Raigarh_2", District_Name == "Ranchi" & State == "Madhya Pradesh" ~ "Ranchi_2", TRUE ~ District_Name))
+
+#plot in descending order#assign order to prop variable
+prop_order <-
+  top_dists_rearranged %>%
+  arrange(desc(Total_hectares_for_prop_sum)) %>%
+  mutate(District_Name = factor(District_Name))
+
+#plot decreasing pop and cumulative hectares 
+scaleRight = 20
+
+topdistrict_tenure_curves  = top_dists_rearranged%>%mutate(District_Name = factor(District_Name, levels= prop_order$District_Name, ordered =TRUE))%>%
+  ggplot(aes(x = District_Name, y = Total_hectares_for_prop_sum))+ 
+  geom_col(aes(x = District_Name, y = Total_hectares_for_prop_sum, fill = State)) + 
+    #geom_line(aes(x = State, y= cum_hectares, group = 1)) + 
+ #geom_line(aes(y= cum_total_population/scaleRight), group = 1, color = "black", size = 1.2)+ 
+  geom_line(aes(y= cum_indiv_hectares/scaleRight), group = 1, color = "#E69F00", size = 1.2)+ 
+  geom_line(aes(y= cum_common_hectares/scaleRight), group = 1, color = "#999933", size = 1.2)+ 
+  #geom_point(aes(y= cum_common_hectares/scaleRight), group = 1, color = "#999933")+ 
+  geom_line(aes(y= cum_forest_hectares/scaleRight), group = 1, color = "#117733", size = 1.2)+ 
+  #geom_point(aes(y= cum_forest_hectares/scaleRight), group = 1, color = "#117733")+
+    scale_fill_manual(values = c(#"#aab539", 
+      "#5b70dd", 
+      #"#d2a035", 
+      "#c13fa6", "#4fc271", "#d33680", "#4e8f2e", "#d27cde", "#41844a", "#dc375f", "#5dc3a3", "#b82d24", "#4ab4dd", "#e55744", "#517dc0", "#e37733", "#7956a3", "#9db269", "#a7487a", "#2e8871", "#cc5967", "#677328", "#a798e0", "#8c6d2c", "#db8ebb", "#a6572c", "#91567c", "#d79f66", "#9f494f", "#e3867c"))+ 
+  scale_y_continuous(name = "Total hectares (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+
+  theme_classic()+ theme(axis.title = element_text(size = 8), axis.text.x = element_blank(), axis.ticks.x = element_blank()) +theme(legend.position = "bottom")
+
+topdistrict_tenure_curves
 
 ```
