@@ -52,9 +52,9 @@ districts_info = districts_info%>%mutate(tenure_max_cat =
            tenure_max == Ttl_Fr_ ~ "Forest", 
            TRUE ~ "NA"))
 
-biophys_people_scale = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = strass_rank, y= Cmbnd_R, shape = tenure_max_cat, color = Clmt_v_, size = MPI_Dst), alpha = 0.6)+ theme_bw()+scale_color_viridis(option = "D")+
-  scale_y_continuous(name = "District Rank according to people-centric restoration opportunity") + scale_x_continuous(name="District Rank according to biophysical restoration potential")+ 
-   geom_vline(xintercept =280.1068, linetype="dashed") + geom_hline(yintercept = 124.1441, linetype="dashed")
+biophys_people_scale = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = strass_rank, y= Cmbnd_R, shape = tenure_max_cat, color = Clmt_v_, size = Lvng_st), alpha = 0.6)+ theme_bw()+scale_color_viridis(option = "D")+
+  scale_y_continuous(name = "District rank according to people-centric restoration opportunity") + scale_x_continuous(name="District rank according to biophysical restoration potential")+ 
+   geom_vline(xintercept =280.1068, linetype="dashed") + geom_hline(yintercept = 124.1441, linetype="dashed")+ labs(color = "Climate Vulnerability", size = "Poverty %", shape = "Dominant tenure regime")
 
 biophys_people_scale
 
@@ -87,6 +87,18 @@ low = districts_info%>%filter(Strass_Cat == "Low" & People_Cat == "High")
 
 #Which states are the high -high potential districts in?
 high_states = high_both%>%group_by(NAME_1)%>%count()
+
+
+#Districts above and below the mean (to match the scatterplot)
+
+#high people-high biophysical
+ppl_bio_high = districts_info%>%filter(strass_rank<=280.1  & Cmbnd_R<= 124.1)
+
+ppl_high_bio_low = districts_info%>%filter(strass_rank>=280.1  & Cmbnd_R<= 124.1)
+
+ppl_low_bio_high = districts_info%>%filter(strass_rank<=280.1  & Cmbnd_R>= 124.1)
+
+ppl_bio_low = districts_info%>%filter(strass_rank>=280.1  & Cmbnd_R>= 124.1)
 
 ```
 
