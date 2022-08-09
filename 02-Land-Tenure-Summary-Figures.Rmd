@@ -436,7 +436,7 @@ conflict_obs_district = district_summary[!district_summary$District_Name %in% mp
 #combine vulnerability and mpi_district-summary 
 
 #change the state name of Leh and Ladakh in the vulnerability data 
-vulnerability$State[vulnerability$District == "Leh"] <- "Jammu And Kashmir"
+vulnerability$State[vulnerability$District == "Leh Ladakh"] <- "Jammu And Kashmir"
 
 vulnerability$State[vulnerability$District == "Kargil"] <- "Jammu And Kashmir"
 
@@ -576,7 +576,11 @@ missing = setdiff(vulnerability$District, district_mpi_climate$District_Name) # 
 
 #for example: Barddhaman district is now Paschim and Purba Barddhaman. For such districts there is no MPI and census 2011 population and land use data
 
-#N = 563 districts
+#N = 562 districts
+
+#Remove districts with NA for climate vulnerability index
+district_mpi_climate = district_mpi_climate %>%
+  filter(!is.na(Climate_vulnerability_index))
 
 ```
 
