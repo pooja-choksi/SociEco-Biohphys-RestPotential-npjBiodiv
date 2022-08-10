@@ -409,7 +409,7 @@ dat.summary = dat.summary%>%dplyr::mutate(District_Name = recode(District_Name,
 "Uttar_Dinajpur" ="Uttar Dinajpur"))
 
 #Join mpi and dat.summary using state and district names
-mpi_dat.summary = merge(dat.summary, mpi_district[c("District", "State", "MPI_District", "Number_of_MPI_PeopleDistrict")], by.x = c("State", "District_Name"), by.y= c("State", "District"))
+mpi_dat.summary = merge(dat.summary, mpi_district[c("District", "State", "MPI_District", "Number_of_MPI_PeopleDistrict", "Living_standards")], by.x = c("State", "District_Name"), by.y= c("State", "District"))
 
 #find the districts with no match between mpi and dat.summary 
 conflict_obs = mpi_district[!mpi_district$District %in% dat.summary$District_Name, ]
@@ -424,7 +424,7 @@ conflict_villages = dat.summary[!dat.summary$District_Name %in% mpi_dat.summary$
 district_summary = dat.summary%>%group_by(District_Name, State)%>%summarise_at(.vars =vars(Total_Indiv, Total_Common, Total_Forest, Total_Unaccounted, Total_Population, Total_Household, Total_hectares_for_prop, forests_land, non_agricultural_land, barren_uncultivable_land, pasture_grazing_land, misc_tree_crop_land, culturable_wasteland, fallow_other_than_current_fallow_land, current_fallow_land, net_sown_area, total_irrigated_land, total_unirrigated_land), .funs =c(sum = "sum"))
 
 #Combine this table with the mpi table
-mpi_district_summary = merge(district_summary, mpi_district[c("District", "State", "MPI_District", "Number_of_MPI_PeopleDistrict")], by.x = c("State", "District_Name"), by.y= c("State", "District"))
+mpi_district_summary = merge(district_summary, mpi_district[c("District", "State", "MPI_District", "Number_of_MPI_PeopleDistrict", "Living_standards")], by.x = c("State", "District_Name"), by.y= c("State", "District"))
 
 #find the districts with no match between mpi and dat.summary 
 conflict_obs_district = district_summary[!district_summary$District_Name %in% mpi_district_summary$District_Name, ]
