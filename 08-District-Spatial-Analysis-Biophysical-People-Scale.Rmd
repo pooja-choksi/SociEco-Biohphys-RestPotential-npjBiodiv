@@ -40,10 +40,6 @@ EXTRACT MEAN BIOPHYSICAL POTENTIAL FOR EACH DISTRICT AND RANK DISTRICTS ACCORDIN
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 
-#remove the districts which don't have a value for climate vulnerability 
-districts <- districts[!is.na(districts$Men_Rnk),]
-#N = 563 after removing the districts without CV (one districts has three parts). the total is still 563 districts
-
 #extract mean or majority (for wri data) of raster for each district
 brancalion_extracted = raster::extract(brancalion, districts, fun = mean, na.rm = T, small = T, sp=TRUE)
 brancalion_extracted_df <- as(brancalion_extracted, "data.frame")
@@ -82,8 +78,21 @@ potential_extracted  <- potential_extracted [order(potential_extracted$Strassbur
 #assign each district a rank
 potential_extracted= potential_extracted%>% mutate(strass_rank = match(Strassburg_India_Clipped, unique(Strassburg_India_Clipped)))
 
+#scale the strassburg potential % from 0 to 1 
+potential_extracted = strassburg_extracted_df
+
+#Create a scale of 0 to 1
+range01 <- function(x){1 - ((x-min(x))/(max(x)-min(x)))}
+
+potential_extracted$Strassburg_India_Scaled = (1 - (potential_extracted$Strassburg_India_Clipped - min(potential_extracted$Strassburg_India_Clipped, na.rm= TRUE))/(max(potential_extracted$Strassburg_India_Clipped, na.rm=TRUE) - min(potential_extracted$Strassburg_India_Clipped, na.rm=TRUE)))
+
+#remove the districts which don't have a value for climate vulnerability from the larger districts file and potential extracted
+potential_extracted= potential_extracted[!is.na(potential_extracted$Men_Rnk),]
+
+districts <- districts[!is.na(districts$Men_Rnk),]
+
 #merge the extracted data with districts shapefile
-districts_final = sp::merge(districts, potential_extracted[c("strass_rank", "branca_rank", "wri_rank","Potapov_India_Clipped", "Strassburg_India_Clipped", "Brancalion_India_Clipped", "NAME_1", "NAME_2")], by.x = c("NAME_1","NAME_2"), by.y= c("NAME_1", "NAME_2"), duplicateGeoms = T)
+districts_final = sp::merge(districts, potential_extracted[c("strass_rank","Strassburg_India_Clipped", "Strassburg_India_Scaled", "NAME_1", "NAME_2")], by.x = c("NAME_1","NAME_2"), by.y= c("NAME_1", "NAME_2"), duplicateGeoms = T)
 
 writeOGR(districts_final, layer = "districts_final", dsn= "District-MPI-Climate-Pop-Merged-Biophys.shp", driver = "ESRI Shapefile")
 

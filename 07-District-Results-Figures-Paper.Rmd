@@ -40,15 +40,20 @@ We look at the top and bottom quantile of the mean rank of districts and discuss
 
 #Determine the top and bottom quantile of districts 
 summary(district_mpi_climate_summary$Mean_Rank_Scaled)
-
 #1st q = 0.3221
 #3rd q= 0.6429
 
-top_districts = district_mpi_climate_summary%>%filter(Mean_Rank_Scaled<0.3221)
+#The mean of living stands MPI and the climate vulnerability 
+#using this in final figures as it is the least amount of conversion of data
+summary(district_mpi_climate_summary$People_centric_Mean)
+#1st q = 0.4745
+#3rd q = 0.5425
 
-high_districts = district_mpi_climate_summary%>%filter(Mean_Rank_Scaled>0.6429)
+top_districts = district_mpi_climate_summary%>%filter(People_centric_Mean>0.5425)
 
-middle_districts = district_mpi_climate_summary%>%filter(Mean_Rank_Scaled >0.3221 & Mean_Rank_Scaled<0.6429)
+high_districts = district_mpi_climate_summary%>%filter(People_centric_Mean>0.5425)
+
+middle_districts = district_mpi_climate_summary%>%filter(People_centric_Mean >0.4745 & People_centric_Mean<0.5425)
 
 ```
 
@@ -87,7 +92,8 @@ idvar=c('State', 'Total_Population_sum', 'X', "MPI_District", "Number_of_MPI_Peo
         "Total_Household_sum", "forests_land_sum", "non_agricultural_land_sum", "barren_uncultivable_land_sum", 
         "pasture_grazing_land_sum", "misc_tree_crop_land_sum",
         "culturable_wasteland_sum", "fallow_other_than_current_fallow_land_sum", "net_sown_area_sum", "current_fallow_land_sum", "total_irrigated_land_sum", "total_unirrigated_land_sum", "District_Code", "State_Code", 
-        "Climate_vulnerability_index", "Combined_Rank"))
+        "Climate_vulnerability_index", "Combined_Rank", 
+        "People_centric_Mean", "People_Centric_Rank"))
 
 #plot of the distribution of land tenure in top districts
 tenure_topdistricts = ggplot()+geom_histogram(data= top_districts, aes(x=Total_Forest_sum), fill ="#117733", alpha=0.5, binwidth = 300000)+geom_histogram(data = top_districts, aes(x=Total_Common_sum), fill = "#999933", alpha =0.5, binwidth = 300000)+ geom_histogram(data = top_districts, aes(x= Total_Indiv_sum), fill = "#E69F00", alpha= 0.5, binwidth = 300000)+ theme_classic()+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+ labs(x = "Total number of hectares", y = "Freqeuncy")
@@ -134,7 +140,7 @@ prop_order <-
   mutate(District_Name = factor(District_Name))
 
 #plot decreasing pop and cumulative hectares 
-scaleRight = 20
+scaleRight = 35
 
 topdistrict_tenure_curves  = top_dists_rearranged%>%mutate(District_Name = factor(District_Name, levels= prop_order$District_Name, ordered =TRUE))%>%
   ggplot(aes(x = District_Name, y = Total_hectares_for_prop_sum))+ 
@@ -146,13 +152,20 @@ topdistrict_tenure_curves  = top_dists_rearranged%>%mutate(District_Name = facto
   #geom_point(aes(y= cum_common_hectares/scaleRight), group = 1, color = "#999933")+ 
   geom_line(aes(y= cum_forest_hectares/scaleRight), group = 1, color = "#117733", size = 1.2)+ 
   #geom_point(aes(y= cum_forest_hectares/scaleRight), group = 1, color = "#117733")+
-    scale_fill_manual(values = c(#"#aab539", 
-      "#5b70dd", 
-      #"#d2a035", 
-      "#c13fa6", "#4fc271", "#d33680", "#4e8f2e", "#d27cde", "#41844a", "#dc375f", "#5dc3a3", "#b82d24", "#4ab4dd", "#e55744", "#517dc0", "#e37733", "#7956a3", "#9db269", "#a7487a", "#2e8871", "#cc5967", "#677328", "#a798e0", "#8c6d2c", "#db8ebb", "#a6572c", "#91567c", "#d79f66", "#9f494f", "#e3867c"))+ 
-  scale_y_continuous(name = "Total hectares (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+
-  theme_classic()+ theme(axis.title = element_text(size = 8), axis.text.x = element_blank(), axis.ticks.x = element_blank()) +theme(legend.position = "bottom")
+    scale_fill_manual(values = c(#"#aab539", #"#5b70dd", 
+      "#d2a035", "#c13fa6", #"#4fc271", 
+      "#d33680", #"#4e8f2e", #"#d27cde", 
+      "#41844a", "#dc375f", "#5dc3a3", "#b82d24", "#4ab4dd", "#e55744", "#517dc0", #"#e37733", 
+      "#7956a3", #"#9db269", #"#a7487a",
+      "#2e8871", #"#cc5967", 
+      "#677328", #"#a798e0", 
+      "#8c6d2c", "#db8ebb", "#a6572c", "#91567c", "#d79f66", "#9f494f", "#e3867c"))+ 
+  scale_y_continuous(name = "Total hectares (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+scale_x_discrete(name = "District")+
+  theme_classic()+ theme(axis.title = element_text(size = 8), axis.text.x = element_blank(), axis.ticks.x = element_blank()) +theme(legend.position = "bottom")+ scale_color_manual(name = "Land tenure", values = c("#E69F00" = "Individual","#999933" =  "Common",
+"#117733" = "Forest"))
 
 topdistrict_tenure_curves
+
+ggarrange(district_tenure_curves, topdistrict_tenure_curves, nrow=2, common.legend = TRUE, legend="right")
 
 ```

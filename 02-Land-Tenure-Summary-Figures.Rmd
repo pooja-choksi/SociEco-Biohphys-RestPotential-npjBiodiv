@@ -596,10 +596,10 @@ district_mpi_climate = district_mpi_climate%>%mutate(climate_vulnerable_weighted
 ##MPI
 #Rank the districts on MPI 
 #rearrange the districts in descending order of MPI
-district_mpi_climate  <- district_mpi_climate [order(district_mpi_climate$MPI_District, decreasing=TRUE),]
+district_mpi_climate  <- district_mpi_climate [order(district_mpi_climate$Living_standards, decreasing=TRUE),]
 
 #assign each district a rank
-district_mpi_climate= district_mpi_climate%>% mutate(MPI_rank = match(MPI_District, unique(MPI_District)))
+district_mpi_climate= district_mpi_climate%>% mutate(MPI_rank = match(Living_standards, unique(Living_standards)))
 
 ##Climate vulnerability 
 #rearrange the districts in descending order of MPI
@@ -616,9 +616,9 @@ district_mpi_climate  <- district_mpi_climate [order(district_mpi_climate$Total_
 district_mpi_climate= district_mpi_climate%>% mutate(Population_Rank = match(Total_Population_sum, unique(Total_Population_sum)))
 
 #Create the average rank of all three variables
-district_mpi_climate= district_mpi_climate%>%dplyr::mutate(Mean_Rank = rowMeans(.[, 27:29]))
+district_mpi_climate= district_mpi_climate%>%dplyr::mutate(Mean_Rank = rowMeans(.[, 28:29]))
 
-#rearrange the districts in descending order of MPI
+#rearrange the districts in descending order of the mean rank 
 district_mpi_climate  <- district_mpi_climate [order(district_mpi_climate$Mean_Rank, decreasing=FALSE),]
 
 #assign each district a rank
@@ -631,8 +631,35 @@ district_mpi_climate  <- district_mpi_climate [order(district_mpi_climate$Mean_R
 
 district_mpi_climate$Mean_Rank_Scaled = range01(district_mpi_climate$Mean_Rank)
 
+```
+
+ALTERNATIVE WAY OF CALCULATING PEOPLE_CENTRIC RESTORATION SCALE 
+
+First, scale both the living stands of MPI and the climate vulnerability from 0 t o1 and then take an average of that instead of the average of just the final district ranks.
+
+```{r message = FALSE, warning= FALSE, include=TRUE}
+
+#Create a scale of 0 to 1
+range01 <- function(x){(x-min(x))/(max(x)-min(x))}
+
+#First rescale living standard of MPI. 
+district_mpi_climate$Living_standards_scaled = district_mpi_climate$Living_standards/100 
+
+#Calculate mean of living standards scaled and climate vulnerability
+district_mpi_climate$People_centric_Mean= ((district_mpi_climate$Living_standards_scaled+ district_mpi_climate$Climate_vulnerability_index)/2)
+
+#assign each district a rank
+district_mpi_climate= district_mpi_climate%>%mutate(People_Centric_Rank = match(People_centric_Mean, unique(People_centric_Mean)))
+
+
+```
+
+SAVE THE CSV WHICH INCLUDES BOTH METHODS 
+```{r}
+
 #write csv 
 write.csv(district_mpi_climate, "District-Climate-MPI-Ranked.csv")
+
 ```
 
 
@@ -769,8 +796,10 @@ district_tenure_curves  = dist_rearranged%>%mutate(District_Name = factor(Distri
   geom_line(aes(y= cum_forest_hectares/scaleRight), group = 1, color = "#117733", size = 1.2)+ 
   #geom_point(aes(y= cum_forest_hectares/scaleRight), group = 1, color = "#117733")+
     scale_fill_manual(values = c("#aab539", "#5b70dd", "#d2a035", "#c13fa6", "#4fc271", "#d33680", "#4e8f2e", "#d27cde", "#41844a", "#dc375f", "#5dc3a3", "#b82d24", "#4ab4dd", "#e55744", "#517dc0", "#e37733", "#7956a3", "#9db269", "#a7487a", "#2e8871", "#cc5967", "#677328", "#a798e0", "#8c6d2c", "#db8ebb", "#a6572c", "#91567c", "#d79f66", "#9f494f", "#e3867c"))+ 
-  scale_y_continuous(name = "Total hectares (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+
+  scale_y_continuous(name = "Total hectares (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+scale_x_discrete(name = "District")+
   theme_classic()+ theme(axis.title = element_text(size = 8), axis.text.x = element_blank(), axis.ticks.x = element_blank()) +theme(legend.position = "bottom")
+
+district_tenure_curves
 
 ```
 

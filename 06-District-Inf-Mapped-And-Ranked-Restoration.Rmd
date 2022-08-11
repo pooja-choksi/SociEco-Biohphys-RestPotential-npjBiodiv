@@ -178,7 +178,7 @@ districts$NAME_2)   # elements in first NOT in second
 
 ```
 
-SAVE THE FILES FOR NEXT SCRIPT
+COMBINE THE SPATIAL DATA WITH THE DISTRICT-MPI- CLIMATE DATA
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 

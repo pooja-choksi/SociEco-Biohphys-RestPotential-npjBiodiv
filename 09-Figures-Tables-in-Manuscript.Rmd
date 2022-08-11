@@ -28,6 +28,8 @@ Read in all the data from previous scripts that we need for plots and tables.
 #For all questions, we need this data
 districts_info = read.csv("District-Climate-MPI-Biophys-Ranked.csv")
 
+aspirational_districts = read.csv("Aspirational-Districts-Phase1.csv")
+
 ```
 
 ## SYNERGIES AND TRADE-OFFS BETWEEN SEVERAL FACTORS
@@ -38,10 +40,32 @@ We also subset the data into the different quantiles to have a closer look at wh
 
 ```{r message=FALSE, warning=FALSE, include=TRUE, echo= FALSE}
 
+#Make a variable for the presence of aspirational district
+aspirational_districts$Aspirational_District = "Aspirational_district"
+
+#recode districts to match with the main dataset 
+
+aspirational_districts = aspirational_districts%>%dplyr::mutate(District.name = recode(District.name, 
+"West singhbhum" ="Pashchimi Singhbhum", 
+"Chatttarpur" = "Chhatarpur",
+"East nimar" = "East Nimar",
+"Gadchiroli" = "Garhchiroli",
+"Nuapara" = "Nuapada",
+"Ferozepur" = "Firozpur",
+"Dholpur" = "Dhaulpur",
+"Virudhunagar" = "Virudunagar",
+"Haridwar" = "Hardwar",
+"Udham singh nagar" = "Udham Singh Nagar",
+"Dakshin dinajpur" = "Dakshin Dinajpur"))
+
+#Combine aspiration districts with the main dataset
+districts_info = merge(districts_info, aspirational_districts[c("District.name", "S.NO.", "Aspirational_District")], by.x = c("NAME_2", "NAME_1"), 
+              by.y =c("District.name", "S.NO."), all.x=T)
+
 #All the land tenures together
 #first categorize the three variables
 
-#Remove the duplicate in Assam, so we will have only 562 districts 
+#Remove the duplicates 
 districts_info = districts_info [!duplicated(districts_info[c("NAME_1","NAME_2")]),]
 
 districts_info$tenure_max  = apply(districts_info[c("Ttl_In_", "Ttl_Cm_", "Ttl_Fr_")], 1, max)
@@ -52,7 +76,12 @@ districts_info = districts_info%>%mutate(tenure_max_cat =
            tenure_max == Ttl_Fr_ ~ "Forest", 
            TRUE ~ "NA"))
 
-biophys_people_scale = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = strass_rank, y= Cmbnd_R, shape = tenure_max_cat, color = Clmt_v_, size = Lvng_st), alpha = 0.6)+ theme_bw()+scale_color_viridis(option = "D")+
+#subset asiprational districts here to plot 
+subset_aspirational = subset(districts_info, Aspirational_District == "Aspirational_district")
+
+biophys_people_scale = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = strass_rank, y= Cmbnd_R, shape = tenure_max_cat, color = Clmt_v_, size = Lvng_st, border = Aspirational_District), alpha = 0.6)+
+  #geom_point(data = subset_aspirational, col = "black", stroke = 3)+
+theme_bw()+scale_color_viridis(option = "D")+
   scale_y_continuous(name = "District rank according to people-centric restoration opportunity") + scale_x_continuous(name="District rank according to biophysical restoration potential")+ 
    geom_vline(xintercept =280.1068, linetype="dashed") + geom_hline(yintercept = 124.1441, linetype="dashed")+ labs(color = "Climate Vulnerability", size = "Poverty %", shape = "Dominant tenure regime")
 
