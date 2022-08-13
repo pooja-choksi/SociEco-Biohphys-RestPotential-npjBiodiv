@@ -47,6 +47,7 @@ population = read.csv("Population-Census-2011.csv")
 
 #Multidimensional Poverty Index
 mpi_district = read.csv("Multidimensional_Poverty_Index_2018.csv")
+mpi_district = mpi_district%>% drop_na(Living_standards)
 
 #Climate vulnerability
 vulnerability = read.csv("Climate-Vulnerability-Index-NationalMission.csv")
@@ -582,6 +583,7 @@ missing = setdiff(vulnerability$District, district_mpi_climate$District_Name) # 
 district_mpi_climate = district_mpi_climate %>%
   filter(!is.na(Climate_vulnerability_index))
 
+#N = 550 districts
 ```
 
 
@@ -590,16 +592,21 @@ This data will be stitched with spatial data at the district level in
 
 ```{r message=FALSE, warning=FALSE, include=TRUE }
 
+#convert Living standards to a 0 to 1 scale 
+range01 <- function(x){((x-min(x))/(max(x)-min(x)))}
+
+district_mpi_climate$Living_standards_scaled = range01(district_mpi_climate$Living_standards)
+
 #creating a weighted average for number of people in climate vulnerbility in each district
 district_mpi_climate = district_mpi_climate%>%mutate(climate_vulnerable_weighted = Climate_vulnerability_index*Total_Population_sum)
 
 ##MPI
 #Rank the districts on MPI 
 #rearrange the districts in descending order of MPI
-district_mpi_climate  <- district_mpi_climate [order(district_mpi_climate$Living_standards, decreasing=TRUE),]
+district_mpi_climate  <- district_mpi_climate [order(district_mpi_climate$Living_standards_scaled, decreasing=TRUE),]
 
 #assign each district a rank
-district_mpi_climate= district_mpi_climate%>% mutate(MPI_rank = match(Living_standards, unique(Living_standards)))
+district_mpi_climate= district_mpi_climate%>% mutate(MPI_rank = match(Living_standards_scaled, unique(Living_standards_scaled)))
 
 ##Climate vulnerability 
 #rearrange the districts in descending order of MPI
@@ -616,7 +623,7 @@ district_mpi_climate  <- district_mpi_climate [order(district_mpi_climate$Total_
 district_mpi_climate= district_mpi_climate%>% mutate(Population_Rank = match(Total_Population_sum, unique(Total_Population_sum)))
 
 #Create the average rank of all three variables
-district_mpi_climate= district_mpi_climate%>%dplyr::mutate(Mean_Rank = rowMeans(.[, 28:29]))
+district_mpi_climate= district_mpi_climate%>%dplyr::mutate(Mean_Rank = rowMeans(.[, 29:30]))
 
 #rearrange the districts in descending order of the mean rank 
 district_mpi_climate  <- district_mpi_climate [order(district_mpi_climate$Mean_Rank, decreasing=FALSE),]
@@ -642,11 +649,12 @@ First, scale both the living stands of MPI and the climate vulnerability from 0 
 #Create a scale of 0 to 1
 range01 <- function(x){(x-min(x))/(max(x)-min(x))}
 
-#First rescale living standard of MPI. 
-district_mpi_climate$Living_standards_scaled = district_mpi_climate$Living_standards/100 
+#rescale the climat vulnerability index for only these 550 districts
+district_mpi_climate$Climate_vulnerability_scaled = 
+  range01(district_mpi_climate$Climate_vulnerability_index)
 
 #Calculate mean of living standards scaled and climate vulnerability
-district_mpi_climate$People_centric_Mean= ((district_mpi_climate$Living_standards_scaled+ district_mpi_climate$Climate_vulnerability_index)/2)
+district_mpi_climate$People_centric_Mean= ((district_mpi_climate$Living_standards_scaled+ district_mpi_climate$Climate_vulnerability_scaled)/2)
 
 #assign each district a rank
 district_mpi_climate= district_mpi_climate%>%mutate(People_Centric_Rank = match(People_centric_Mean, unique(People_centric_Mean)))

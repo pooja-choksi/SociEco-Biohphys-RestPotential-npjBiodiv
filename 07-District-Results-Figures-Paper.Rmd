@@ -29,8 +29,36 @@ It also has district level land tenure data
 
 district_mpi_climate_summary = read.csv("District-Climate-MPI-Ranked.csv")
 
+aspirational_districts = read.csv("Aspirational-Districts-Phase1.csv")
 ```
 
+COMBINE ASPIRATIONAL DISTRICTS DATA TO MAIN DATASET
+
+```{r message =FALSE, warning=FALSE, include=TRUE}
+
+#Make a variable for the presence of aspirational district
+aspirational_districts$Aspirational_District = "Aspirational_district"
+
+#recode districts to match with the main dataset 
+aspirational_districts = aspirational_districts%>%dplyr::mutate(District.name = recode(District.name, 
+"West singhbhum" ="Pashchimi Singhbhum", 
+"Chatttarpur" = "Chhatarpur",
+"East nimar" = "East Nimar",
+"Gadchiroli" = "Garhchiroli",
+"Nuapara" = "Nuapada",
+"Ferozepur" = "Firozpur",
+"Dholpur" = "Dhaulpur",
+"Virudhunagar" = "Virudunagar",
+"Haridwar" = "Hardwar",
+"Udham singh nagar" = "Udham Singh Nagar",
+"Dakshin dinajpur" = "Dakshin Dinajpur"))
+
+#Combine aspiration districts with the main dataset
+district_mpi_climate_summary = merge(district_mpi_climate_summary, aspirational_districts[c("District.name", "S.NO.", "Aspirational_District")], by.x = c("District_Name", "State"), 
+              by.y =c("District.name", "S.NO."), all.x=T)
+
+#74 aspirational districts 
+```
 RESULTS TO REPORT IN THE PAPER 
 We look at the top and bottom quantile of the mean rank of districts and discuss restoration methods which are appropriate for different land tenure regimes in more detail
 
@@ -38,22 +66,32 @@ We look at the top and bottom quantile of the mean rank of districts and discuss
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 
-#Determine the top and bottom quantile of districts 
-summary(district_mpi_climate_summary$Mean_Rank_Scaled)
-#1st q = 0.3221
-#3rd q= 0.6429
-
+#1. People centric restoration scale 
 #The mean of living stands MPI and the climate vulnerability 
 #using this in final figures as it is the least amount of conversion of data
 summary(district_mpi_climate_summary$People_centric_Mean)
-#1st q = 0.4745
-#3rd q = 0.5425
+#1st q = 0.5361
+#3rd q = 0.7067
 
-top_districts = district_mpi_climate_summary%>%filter(People_centric_Mean>0.5425)
+top_districts = district_mpi_climate_summary%>%filter(People_centric_Mean>0.7067)
 
-high_districts = district_mpi_climate_summary%>%filter(People_centric_Mean>0.5425)
+high_districts = district_mpi_climate_summary%>%filter(People_centric_Mean>0.7067)
 
-middle_districts = district_mpi_climate_summary%>%filter(People_centric_Mean >0.4745 & People_centric_Mean<0.5425)
+middle_districts = district_mpi_climate_summary%>%filter(People_centric_Mean >0.5361 & People_centric_Mean<0.7067)
+
+#2. Living standards of MPI scale 
+summary(district_mpi_climate_summary$Living_standards_scaled)
+#1st q = 0.6182
+#3rd q = 0.7870
+
+top_districts_mpi = district_mpi_climate_summary%>%filter(People_centric_Mean>0.7870)
+
+#3. Climate vulnerability scale
+summary(district_mpi_climate_summary$Climate_vulnerability_scaled)
+#1st q = 0.4279
+#3rd q = 0.6650
+
+top_districts_climate = district_mpi_climate_summary%>%filter(People_centric_Mean>0.6650)
 
 ```
 
@@ -63,7 +101,8 @@ PLOT OF THE STATES IN WHICH WE FIND THE TOP DISTRICTS
 
 ```{r message= FALSE, warning=FALSE, include=TRUE}
 
-#Which states make up the top quartile of districts? 
+#1. people-centric restoration scale 
+#Which states make up the top quantile of districts for people centrict restoration?
 top_states = top_districts%>%group_by(State)%>%count()
   
 #plot in descending order#assign order to prop variable
@@ -77,6 +116,14 @@ topstates_plot = top_states%>%mutate(State = factor(State, levels = prop_order$S
 
 topstates_plot
 
+#2. Living standards of MPI scale 
+#Which states make up the top quartile of districts for living standards poverty?
+top_states_mpi = top_districts_mpi%>%group_by(State)%>%count()
+
+#3. Climate vulnerability 
+#Which states make up the top quartile of districts for climate vulnerability?
+top_states_climate = top_districts_climate%>%group_by(State)%>%count()
+
 ```
 
 QUESTION 2: Which land tenures within districts provide the largest number of hectares for restoration?
@@ -84,6 +131,15 @@ QUESTION 2: Which land tenures within districts provide the largest number of he
 PLOT OF THE DISTRIBUTION OF EACH LAND TENURE IN THE TOP DISTRICTS AND REPORT % of LAND TENURE IN TOP DISTRICTS
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
+
+#How many districts have forest and commons as their max category? 
+top_districts$tenure_max  = apply(top_districts[c("Total_Indiv_sum", "Total_Common_sum", "Total_Forest_sum")], 1, max)
+
+top_districts_tenure = top_districts%>%mutate(tenure_max_cat = 
+ case_when(tenure_max == Total_Indiv_sum ~ "Individual",
+           tenure_max == Total_Common_sum ~ "Common",
+           tenure_max == Total_Forest_sum ~ "Forest", 
+           TRUE ~ "NA"))
 
 #wide to long
 top_district_long = reshape(top_districts, direction='long', varying=c('Total_Indiv_sum', 'Total_Common_sum', 'Total_Forest_sum', 'Total_Unaccounted_sum'), timevar= 'Land_Tenure', times=c('Individual', 'Common_NonForest', 'Forest', 'Unaccounted'),

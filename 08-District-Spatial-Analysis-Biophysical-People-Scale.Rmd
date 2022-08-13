@@ -50,11 +50,16 @@ strassburg_extracted_df <- as(strassburg_extracted, "data.frame")
 wri_extracted = raster::extract(wri, districts, fun= modal, na.rm = T, small= T, sp=TRUE)
 wri_extracted_df <- as(wri_extracted, "data.frame")
 
+potential_extracted = strassburg_extracted_df
+
 #combine the data of extracted values 
 potential_extracted = merge(brancalion_extracted_df, strassburg_extracted_df[c("Strassburg_India_Clipped", "NAME_1", "NAME_2")], by.x = c("NAME_2", "NAME_1"), by.y =c("NAME_2", "NAME_1"))
                             
 #combine the data of extracted values 
 potential_extracted = merge(potential_extracted, wri_extracted_df[c("Potapov_India_Clipped", "NAME_2", "NAME_1")], by.x = c("NAME_2", "NAME_1"), by.y =c("NAME_2", "NAME_1"))
+
+#remove the districts which don't have a value for climate vulnerability from the larger districts file and potential extracted
+potential_extracted= potential_extracted[!is.na(potential_extracted$Pp__M),]
 
 #rank the districts as per their biophysical potential 
 #1. Brancalion
@@ -72,27 +77,35 @@ potential_extracted  <- potential_extracted [order(potential_extracted$Potapov_I
 potential_extracted= potential_extracted%>% mutate(wri_rank = match(Potapov_India_Clipped, unique(Potapov_India_Clipped)))
 
 #3. Strassburg
+#scale the strassburg potential % from 0 to 1 
+#Create a scale of 0 to 1
+range01 <- function(x){((x-min(x))/(max(x)-min(x)))}
+
+potential_extracted  <- potential_extracted [order(potential_extracted$Strassburg_India_Clipped, decreasing=FALSE),]
+
+potential_extracted$Strassburg_Scaled = range01(potential_extracted$scen_cb.bd_gradient)
+
+potential_extracted$Strassburg_Scaled = (potential_extracted$Strassburg_India_Clipped - min(potential_extracted$Strassburg_India_Clipped, na.rm= TRUE))/(max(potential_extracted$Strassburg_India_Clipped, na.rm=TRUE) - min(potential_extracted$Strassburg_India_Clipped, na.rm=TRUE))
+
+#since the Strassburg paper has a scale of 0-20, we need to first rescale it to a 0 to 100 and then divide to scale it from 0 to 1
+
+potential_extracted$Strassburg_Scaled_100 <- rescale(potential_extracted$Strassburg_India_Clipped, from = c(0, 20), to = c(0, 100), na,rm=T)
+
+potential_extracted$Strassburg_Scaled_final <- (potential_extracted$Strassburg_Scaled_100/100)
+
+#Rank the districts as per Strassburg
 #reorder the districts in descending order of MPI
-potential_extracted  <- potential_extracted [order(potential_extracted$Strassburg_India_Clipped , decreasing=TRUE),]
+potential_extracted  <- potential_extracted [order(potential_extracted$Strassburg_Scaled_final, decreasing=TRUE),]
 
 #assign each district a rank
-potential_extracted= potential_extracted%>% mutate(strass_rank = match(Strassburg_India_Clipped, unique(Strassburg_India_Clipped)))
-
-#scale the strassburg potential % from 0 to 1 
-potential_extracted = strassburg_extracted_df
-
-#Create a scale of 0 to 1
-range01 <- function(x){1 - ((x-min(x))/(max(x)-min(x)))}
-
-potential_extracted$Strassburg_India_Scaled = (1 - (potential_extracted$Strassburg_India_Clipped - min(potential_extracted$Strassburg_India_Clipped, na.rm= TRUE))/(max(potential_extracted$Strassburg_India_Clipped, na.rm=TRUE) - min(potential_extracted$Strassburg_India_Clipped, na.rm=TRUE)))
-
-#remove the districts which don't have a value for climate vulnerability from the larger districts file and potential extracted
-potential_extracted= potential_extracted[!is.na(potential_extracted$Men_Rnk),]
-
-districts <- districts[!is.na(districts$Men_Rnk),]
+potential_extracted= potential_extracted%>% mutate(strass_rank = match(Strassburg_Scaled_final, unique(Strassburg_Scaled_final)))
 
 #merge the extracted data with districts shapefile
-districts_final = sp::merge(districts, potential_extracted[c("strass_rank","Strassburg_India_Clipped", "Strassburg_India_Scaled", "NAME_1", "NAME_2")], by.x = c("NAME_1","NAME_2"), by.y= c("NAME_1", "NAME_2"), duplicateGeoms = T)
+
+#first remove the districts which don't have a value for climate vulnerability from the larger districts file and potential extracted
+districts= districts[!is.na(districts$Pp__M),]
+
+districts_final = sp::merge(districts, potential_extracted[c("strass_rank","Strassburg_India_Clipped", "Strassburg_Scaled_final", "NAME_1", "NAME_2")], by.x = c("NAME_1","NAME_2"), by.y= c("NAME_1", "NAME_2"), duplicateGeoms = T)
 
 writeOGR(districts_final, layer = "districts_final", dsn= "District-MPI-Climate-Pop-Merged-Biophys.shp", driver = "ESRI Shapefile")
 
