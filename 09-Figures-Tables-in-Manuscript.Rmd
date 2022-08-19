@@ -17,6 +17,7 @@ library(gridExtra)
 library(viridis)
 #get color blind friendly colors 
 library(pals)
+library(rgdal)
 
 ```
 
@@ -28,13 +29,46 @@ Read in all the data from previous scripts that we need for plots and tables.
 #For all questions, we need this data
 districts_info = read.csv("District-Climate-MPI-Biophys-Ranked.csv")
 
+#list of aspirational districts from Phase 1
+aspirational_districts = read.csv("Aspirational-Districts-Phase1.csv")
+
+#district shapefile with info on the people-centric variables
+districts = readOGR("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-District-Shapefiles\\District-MPI-Climate-Pop-Merged-Biophys.shp")
+
+```
+
+#COMBINE ASPIRATIONAL DISTRICTS TO DISTRICTS_INFO
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+
+#Make a variable for the presence of aspirational district
+aspirational_districts$Aspirational_District = "Aspirational_district"
+
+#recode districts to match with the main dataset 
+aspirational_districts = aspirational_districts%>%dplyr::mutate(District.name = recode(District.name, 
+"West singhbhum" ="Pashchimi Singhbhum", 
+"Chatttarpur" = "Chhatarpur",
+"East nimar" = "East Nimar",
+"Gadchiroli" = "Garhchiroli",
+"Nuapara" = "Nuapada",
+"Ferozepur" = "Firozpur",
+"Dholpur" = "Dhaulpur",
+"Virudhunagar" = "Virudunagar",
+"Haridwar" = "Hardwar",
+"Udham singh nagar" = "Udham Singh Nagar",
+"Dakshin dinajpur" = "Dakshin Dinajpur"))
+
+#combine with districts_info
+
+#Combine aspiration districts with the main dataset
+districts_info = merge(districts_info, aspirational_districts[c("District.name", "S.NO.", "Aspirational_District")], by.x = c("NAME_2", "NAME_1"), 
+              by.y =c("District.name", "S.NO."), all.x=T)
+
 ```
 
 ## SYNERGIES AND TRADE-OFFS BETWEEN SEVERAL FACTORS
 
-The chunk of code below creates a scatterplot where each district's biophysical potential rank and people-centric restoration opportunity rank is plotted. 
-
-We also subset the data into the different quantiles to have a closer look at which districts are in the top and bottom quantiles and how that compares to their biophysical potential.
+The chunk of code below creates a scatterplot where each district's biophysical potential and people-centric restoration opportunity scale is plotted. 
 
 ```{r message=FALSE, warning=FALSE, include=TRUE, echo= FALSE}
 #All the land tenures together
@@ -59,56 +93,228 @@ theme_bw()+scale_color_viridis(option = "D")+
 #alternative plot
 biophys_people_scale2 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Pp__M, shape = tenure_max_cat, color = Clmt_vlnrb, size = Lvng_), alpha = 0.6)+theme_bw()+scale_color_viridis(option = "D")+ scale_y_continuous(name = "People-centric restoration opportunity")+ scale_x_continuous(name="Biophysical restoration potential")+ geom_vline(xintercept =0.5, linetype="dashed") + geom_hline(yintercept = 0.5, linetype="dashed")+ labs(color = "Climate Vulnerability", size = "Poverty %", shape = "Dominant tenure regime")
 
+#climate vulnerability v/s biophysical potential 
+biophys_people_scale2 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Clmt_vln_1, shape = tenure_max_cat, color = Clmt_vln_1, size = 3), alpha = 0.6)+theme_bw()+scale_color_viridis(option = "D")+ scale_y_continuous(name = "Climate vulnerability")+ scale_x_continuous(name="Biophysical restoration potential")+ geom_vline(xintercept =0.5, linetype="dashed") + geom_hline(yintercept = 0.5, linetype="dashed")+ labs(color = "Climate Vulnerability", shape = "Dominant tenure regime")
+
 biophys_people_scale2
 
-#report the synergies and trade-offs
-#Biophysical factors v/s people-centric factors 
-#split the data into 4 equal parts 
-summary(districts_info$Ppl_R)
+#climate vulnerability v/s biophysical potential 
+biophys_people_scale3 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Lvn__, shape = tenure_max_cat, color = Lvn__, size = 3), alpha = 0.6)+theme_bw()+scale_color_viridis(option = "D")+ scale_y_continuous(name = "Poverty (Living standards)")+ scale_x_continuous(name="Biophysical restoration potential")+ geom_vline(xintercept =0.5, linetype="dashed") + geom_hline(yintercept = 0.5, linetype="dashed")+ labs(color = "Poverty", shape = "Dominant tenure regime")
 
-districts_info = districts_info%>%mutate(People_Cat = case_when(
-  Ppl_R<=138.2 ~ "High", #under first quantile
-  Ppl_R>=138.2 & Ppl_R<275.5 ~ "Medium", #between first quantile and median
-  Ppl_R>=275.5 & Ppl_R<412.8 ~ "Low", #between median and third quantile
-  Ppl_R>=412.8 & Ppl_R< 550 ~"Very low",
-  TRUE~ "NA"))
+biophys_people_scale3
 
-summary(districts_info$strass_rank)
+```
 
-districts_info = districts_info%>%mutate(Strass_Cat = case_when(
-  strass_rank<=137.2 ~ "High",
-  strass_rank>=137.2 & strass_rank<274.5 ~ "Medium",
-  strass_rank>=274.5 & strass_rank<410.8 ~ "Low",
-  strass_rank>=410.8 & strass_rank<548 ~"Very low",
-  TRUE~ "NA"))
+#TABLE OF THE AGREEMENT WITHIN DISTRICTS PERCENTILES 
 
-high_both = districts_info%>%filter(Strass_Cat == "High" & People_Cat == "High")
+This table shows what the exact cut offs for the percentiles are and how many districts there are in common using the percentiles for the people-centric scale and biophysical scale
 
-medium = districts_info%>%filter(Strass_Cat == "Medium" & People_Cat == "High")
+```{r}
+#Percentiles for people-centric scale 
+quantile(districts_info$Pp__M,  probs = seq(0, 1,1/10))
 
-very_low = districts_info%>%filter(Strass_Cat == "Very low" & People_Cat == "High")
+districts_info = districts_info%>%mutate(People_Percentile = case_when(Pp__M <=0.01405868 ~ "Percentile 0", 
+Pp__M >=0.01405868 & Pp__M <0.4445172 ~ "Percentile 10",
+Pp__M >=0.4445172 & Pp__M<0.5135141~ "Percentile 9",
+Pp__M >=0.5135141 & Pp__M<0.5573356 ~"Percentile 8",
+Pp__M >=0.5573356 & Pp__M<0.6001708~ "Percentile 7",
+Pp__M >=0.6001708 & Pp__M<0.6317055~ "Percentile 6",
+Pp__M >=0.6317055 & Pp__M<0.6610663 ~ "Percentile 5",
+Pp__M >=0.6610663 & Pp__M<0.6912787 ~ "Percentile 4",
+Pp__M >=0.6912787 & Pp__M<0.7253923 ~ "Percentile 3",
+Pp__M >=0.7253923 & Pp__M<0.7628635 ~ "Percentile 2",
+Pp__M >=0.7628635 & Pp__M<0.9506494 ~ "Percentile 1",
+TRUE ~ "NA"))
 
-low = districts_info%>%filter(Strass_Cat == "Low" & People_Cat == "High")
 
-#Which states are the high -high potential districts in?
-high_states = high_both%>%group_by(NAME_1)%>%count()
+districts_info = districts_info%>%mutate(People_Percentile = case_when(Pp__M <=0.01405868 ~ "Percentile 0",  Pp__M <=0.4445172 ~ "Percentile 10",
+Pp__M<=0.5135141~ "Percentile 9",
+Pp__M<=0.5573356 ~"Percentile 8",
+Pp__M<=0.6001708~ "Percentile 7",
+Pp__M<=0.6317055~ "Percentile 6",
+Pp__M<=0.6610663 ~ "Percentile 5",
+Pp__M<=0.6912787 ~ "Percentile 4",
+Pp__M<=0.7253923 ~ "Percentile 3",
+Pp__M<=0.7628635 ~ "Percentile 2",
+Pp__M<=0.9506494 ~ "Percentile 1",
+TRUE ~ "NA"))
 
-low_states = low%>%group_by(NAME_1)%>%count()
-verylow_states = very_low%>%group_by(NAME_1)%>%count()
+#define the levels to plot 
+levels(districts_info$People_Percentile) = c("Percentile 10", "Percentile 29", "Percentile 8", "Percentile 7", "Percentile 6", "Percentile 5", "Percentile 4", "Percentile 3", "Percentile 2", "Percentile 1")
 
-#Districts above and below the mean (to match the scatterplot)
+#Percentiles for living standards of MPI 
+quantile(districts_info$Lvn__,  probs = seq(0, 1,1/10))
 
-#high people-high biophysical
-ppl_bio_high = districts_info%>%filter(strass_rank<=274  & Ppl_R <=275)
-ppl_bio_high_states = ppl_bio_high%>%group_by(NAME_1)%>%count()
+districts_info = districts_info%>%mutate(Poverty_Percentile = case_when(
+Lvn__<=0.4620779 ~ "Percentile 10",
+Lvn__<=0.5870130 ~ "Percentile 9",
+Lvn__<=0.6389610 ~"Percentile 8",
+Lvn__<=0.6727273~ "Percentile 7",
+Lvn__<=0.7116883~ "Percentile 6",
+Lvn__<=0.7361039 ~ "Percentile 5",
+Lvn__<=0.7696104 ~ "Percentile 4",
+Lvn__<=0.8000000 ~ "Percentile 3",
+Lvn__<=0.8522078 ~ "Percentile 2",
+Lvn__<=1.0000000 ~ "Percentile 1",
+TRUE ~ "NA"))
 
-tenure_ppl_bio_high = ppl_bio_high%>%group_by(tenure_max_cat)%>%count()
-  
-ppl_high_bio_low = districts_info%>%filter(strass_rank>=280.1  & Cmbnd_R<= 124.1)
+#define the levels to plot 
+levels(districts_info$Poverty_Percentile) = c("Percentile 10", "Percentile 29", "Percentile 8", "Percentile 7", "Percentile 6", "Percentile 5", "Percentile 4", "Percentile 3", "Percentile 2", "Percentile 1")
 
-ppl_low_bio_high = districts_info%>%filter(strass_rank<=280.1  & Cmbnd_R>= 124.1)
+#Percentiles for climate vulnerability
+quantile(districts_info$Clmt_vln_1,  probs = seq(0, 1,1/10))
 
-ppl_bio_low = districts_info%>%filter(strass_rank>=280.1  & Cmbnd_R>= 124.1)
+districts_info = districts_info%>%mutate(Climate_Vul_Percentile = case_when(
+Clmt_vln_1<=0.3447433 ~ "Percentile 10",
+Clmt_vln_1<=0.4058680 ~ "Percentile 9",
+Clmt_vln_1<=0.4523227 ~"Percentile 8",
+Clmt_vln_1<=0.5012225~ "Percentile 7",
+Clmt_vln_1<=0.5550122~ "Percentile 6",
+Clmt_vln_1<=0.5941320 ~ "Percentile 5",
+Clmt_vln_1<=0.6413203 ~ "Percentile 4",
+Clmt_vln_1<=0.6894866 ~ "Percentile 3",
+Clmt_vln_1<=0.7579462 ~ "Percentile 2",
+Clmt_vln_1<=1.0000000 ~ "Percentile 1",
+TRUE ~ "NA"))
+
+#define the levels to plot 
+levels(districts_info$Climate_Vul_Percentile) = c("Percentile 10", "Percentile 29", "Percentile 8", "Percentile 7", "Percentile 6", "Percentile 5", "Percentile 4", "Percentile 3", "Percentile 2", "Percentile 1")
+
+#Percentiles for Strassburg dataset
+quantile(districts_info$Strassburg_Scaled_final,  probs = seq(0, 1,1/10))
+
+districts_info = districts_info%>%mutate(Strassburg_Percentile = case_when(
+Strassburg_Scaled_final<=0.44012024 ~ "Percentile 10",
+Strassburg_Scaled_final<=0.55204775 ~ "Percentile 9",
+Strassburg_Scaled_final<=0.65949414 ~"Percentile 8",
+Strassburg_Scaled_final<=0.70312745~ "Percentile 7",
+Strassburg_Scaled_final<=0.74401004~ "Percentile 6",
+Strassburg_Scaled_final<=0.77339286 ~ "Percentile 5",
+Strassburg_Scaled_final<=0.80372271 ~ "Percentile 4",
+Strassburg_Scaled_final<=0.83253145 ~ "Percentile 3",
+Strassburg_Scaled_final<=0.86876068 ~ "Percentile 2",
+Strassburg_Scaled_final<=0.95653409 ~ "Percentile 1",
+TRUE ~ "NA"))
+
+#define the levels to plot 
+levels(districts_info$Strassburg_Percentile) = c("Percentile 10", "Percentile 29", "Percentile 8", "Percentile 7", "Percentile 6", "Percentile 5", "Percentile 4", "Percentile 3", "Percentile 2", "Percentile 1")
+
+#Find districts with agreement 
+districts_info$People_Strassburg_Percent_Match = ifelse(districts_info$People_Percentile == districts_info$Strassburg_Percentile, "Agreement", "No agreement")
+
+#create a column to show which percentile the agreement and disagreement 
+districts_info = districts_info%>%mutate(People_Strassburg_Percentile_Matched= case_when(districts_info$People_Strassburg_Percent_Match == "Agreement" ~ districts_info$People_Percentile, TRUE ~ "No agreement"))
+
+#Find districts with agreement 
+districts_info$Poverty_Strassburg_Percent_Match = ifelse(districts_info$Poverty_Percentile == districts_info$Strassburg_Percentile, "Agreement", "No agreement")
+
+#create a column to show which percentile the agreement and disagreement 
+districts_info = districts_info%>%mutate(Poverty_Strassburg_Percentile_Matched= case_when(districts_info$Poverty_Strassburg_Percent_Match == "Agreement" ~ districts_info$Poverty_Percentile, TRUE ~ "No agreement"))
+
+#Find districts with agreement 
+districts_info$Climate_Strassburg_Percent_Match = ifelse(districts_info$Climate_Vul_Percentile == districts_info$Strassburg_Percentile, "Agreement", "No agreement")
+
+#create a column to show which percentile the agreement and disagreement 
+districts_info = districts_info%>%mutate(Climate_Strassburg_Percentile_Matched= case_when(districts_info$Climate_Strassburg_Percent_Match == "Agreement" ~ districts_info$Climate_Vul_Percentile, TRUE ~ "No agreement"))
+
+#1. People-centric and Strassburg agreement percentiles 
+agreement = districts_info%>%filter(People_Strassburg_Percent_Match == "Agreement")
+
+#Table of agreement districts using Strassburg and People-centric scale 
+agreement_districts_table = agreement%>%dplyr::group_by(People_Percentile)%>%dplyr::mutate(Number_districts_in_agreement= n())
+
+agreement_districts_table = agreement_districts_table%>%
+
+levels(agreement_districts_table$People_Percentile) = c("Percentile 10", "Percentile 29", "Percentile 8", "Percentile 7", "Percentile 6", "Percentile 5", "Percentile 4", "Percentile 3", "Percentile 2", "Percentile 1")
+
+
+```
+
+#REPORT THE DISTRICTS IN THE TOP AND BOTTOM PERCENTILES AND QUANTILES 
+```{r message = FALSE, warning=FALSE, include =TRUE}
+
+#top percentile (higher percentile is higher priority)
+percentile_1 = districts_info%>%filter(People_Percentile == "Percentile 1")
+
+#top percentile of poverty 
+poverty_percentile_1 = districts_info%>%filter(Poverty_Percentile == "Percentile 1")
+
+#top percentile of climate vulnerability
+climate_percentile_1 = districts_info%>%filter(Climate_Vul_Percentile == "Percentile 1")
+
+```
+
+#PLOT OF PROPORTION OF LAND TENURES WITHIN THE AGREEMENT DISTRICTS
+
+Within districts which have agreement across percentiles, this plot shows the distribution of land tenure
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+#Filter out the agreement districts 
+
+#1. People-centric and Strassburg agreement percentiles 
+agreement = districts_info%>%filter(People_Strassburg_Percent_Match == "Agreement")
+
+agreement$People_Percentile = as.factor(agreement$People_Percentile)
+
+options(scipen = 999)
+
+#Proportion of land available in each land tenure
+agreement_plot = agreement%>%dplyr::group_by(People_Percentile)%>%
+  dplyr::summarise(total = n(),
+                   total_indiv = sum(Tt_I_), 
+                   total_forest = sum(Tt_F_),
+                   total_unaccounted = sum(Tt_U_),
+                   total_common = sum(Tt_C_))
+
+agreement_plot = agreement_plot%>%mutate(Prop_Indiv = (total_indiv/(total_indiv+total_common+total_forest+total_unaccounted))*100,
+
+Prop_Common = (total_common/(total_indiv+total_common+total_forest+total_unaccounted))*100,
+
+Prop_Unaccounted =(total_unaccounted/(total_indiv+total_common+total_forest+total_unaccounted))*100,
+
+Prop_Forest = (total_forest/(total_indiv+total_common+total_forest+total_unaccounted))*100)
+
+#reshape data for plotting
+install.packages("reshape2")
+library(reshape2)
+
+agreement_plot_long = agreement_plot[, -c(2:6)]
+agreement_plot_long = reshape2::melt(agreement_plot_long, id.vars = "People_Percentile")
+
+#define the levels to plot 
+levels(agreement_plot_long$People_Percentile) = c("Percentile 1", "Percentile 2", 
+                                         "Percentile 3", "Percentile 4", 
+                                         "Percentile 5", "Percentile 6", 
+                                         "Percentile 7", "Percentile 8", 
+                                         "Percentile 9", "Percentile 10")
+
+#plot
+agreement_stacked_barplot = 
+agreement_plot_long%>%
+  ggplot(aes(x = People_Percentile, y = value, fill = variable))+
+  geom_col(position = position_stack(reverse = TRUE))+theme_bw()+theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_fill_manual(labels = c("Individual", "Common", "Unaccounted","Forest"),
+    values=c("#E69F00", "#999933", "#D55E00","#117733")) + labs(fill = "Land tenure/cover", x = "Percentiles", y = "Proportion of Tenure")
+
+agreement_stacked_barplot
+
+```
+
+#COMBINE THE DISTRICTS INFO FILE WITH SPATIAL DATA FOR FINAL MAPS
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+
+#first remove the districts which don't have a value for climate vulnerability from the larger districts file and potential extracted
+districts= districts[!is.na(districts$Pp__M),]
+
+districts_final = sp::merge(districts, districts_info[c("tenure_max","tenure_max_cat","People_Percentile","Poverty_Percentile", "Climate_Vul_Percentile", "Strassburg_Percentile", "People_Strassburg_Percent_Match", "Prop_Indiv", "Prop_Common", "Prop_Unaccounted", "Prop_Forest","Poverty_Strassburg_Percent_Match", "Climate_Strassburg_Percent_Match", "Aspirational_District", "People_Strassburg_Percentile_Matched", "Poverty_Strassburg_Percentile_Matched", "Climate_Strassburg_Percentile_Matched", "NAME_1", "NAME_2")], by.x = c("NAME_1","NAME_2"), by.y= c("NAME_1", "NAME_2"), duplicateGeoms = T)
+
+writeOGR(districts_final, layer = "districts_final", dsn= "District-MPI-Climate-Pop-Merged-Biophys-Percentile-Plot.shp", driver = "ESRI Shapefile")
+
+#also create a dataframe from the shapefile to use for analysis below 
+districts_df_final <- as(districts_final, "data.frame")
+
+write.csv(districts_df_final, "District-Climate-MPI-Biophys-Ranked-Agreement-Percentiles.csv")
 
 ```
 
