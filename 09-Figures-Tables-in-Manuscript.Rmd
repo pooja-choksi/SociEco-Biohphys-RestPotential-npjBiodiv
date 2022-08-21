@@ -113,91 +113,75 @@ This table shows what the exact cut offs for the percentiles are and how many di
 #Percentiles for people-centric scale 
 quantile(districts_info$Pp__M,  probs = seq(0, 1,1/10))
 
-districts_info = districts_info%>%mutate(People_Percentile = case_when(Pp__M <=0.01405868 ~ "Percentile 0", 
-Pp__M >=0.01405868 & Pp__M <0.4445172 ~ "Percentile 10",
-Pp__M >=0.4445172 & Pp__M<0.5135141~ "Percentile 9",
-Pp__M >=0.5135141 & Pp__M<0.5573356 ~"Percentile 8",
-Pp__M >=0.5573356 & Pp__M<0.6001708~ "Percentile 7",
-Pp__M >=0.6001708 & Pp__M<0.6317055~ "Percentile 6",
-Pp__M >=0.6317055 & Pp__M<0.6610663 ~ "Percentile 5",
-Pp__M >=0.6610663 & Pp__M<0.6912787 ~ "Percentile 4",
-Pp__M >=0.6912787 & Pp__M<0.7253923 ~ "Percentile 3",
-Pp__M >=0.7253923 & Pp__M<0.7628635 ~ "Percentile 2",
-Pp__M >=0.7628635 & Pp__M<0.9506494 ~ "Percentile 1",
-TRUE ~ "NA"))
-
-
-districts_info = districts_info%>%mutate(People_Percentile = case_when(Pp__M <=0.01405868 ~ "Percentile 0",  Pp__M <=0.4445172 ~ "Percentile 10",
-Pp__M<=0.5135141~ "Percentile 9",
-Pp__M<=0.5573356 ~"Percentile 8",
-Pp__M<=0.6001708~ "Percentile 7",
-Pp__M<=0.6317055~ "Percentile 6",
-Pp__M<=0.6610663 ~ "Percentile 5",
-Pp__M<=0.6912787 ~ "Percentile 4",
-Pp__M<=0.7253923 ~ "Percentile 3",
-Pp__M<=0.7628635 ~ "Percentile 2",
-Pp__M<=0.9506494 ~ "Percentile 1",
+districts_info = districts_info%>%mutate(People_Percentile = case_when(Pp__M <=0.4445172 ~"0-10",
+Pp__M<=0.5135141~ "10-20",
+Pp__M<=0.5573356 ~"20-30",
+Pp__M<=0.6001708~ "30-40",
+Pp__M<=0.6317055~ "40-50",
+Pp__M<=0.6610663 ~ "50-60",
+Pp__M<=0.6912787 ~ "60-70",
+Pp__M<=0.7253923 ~ "70-80",
+Pp__M<=0.7628635 ~ "80-90",
+Pp__M<=0.9506494 ~ "90-100",
 TRUE ~ "NA"))
 
 #define the levels to plot 
-levels(districts_info$People_Percentile) = c("Percentile 10", "Percentile 29", "Percentile 8", "Percentile 7", "Percentile 6", "Percentile 5", "Percentile 4", "Percentile 3", "Percentile 2", "Percentile 1")
+levels(districts_info$People_Percentile) = c("0-10", "10-20", "20-30", "30-40", "40-50", "50-60", "60-70", "70-80", "80-90", "90-100")
 
 #Percentiles for living standards of MPI 
 quantile(districts_info$Lvn__,  probs = seq(0, 1,1/10))
 
 districts_info = districts_info%>%mutate(Poverty_Percentile = case_when(
-Lvn__<=0.4620779 ~ "Percentile 10",
-Lvn__<=0.5870130 ~ "Percentile 9",
-Lvn__<=0.6389610 ~"Percentile 8",
-Lvn__<=0.6727273~ "Percentile 7",
-Lvn__<=0.7116883~ "Percentile 6",
-Lvn__<=0.7361039 ~ "Percentile 5",
-Lvn__<=0.7696104 ~ "Percentile 4",
-Lvn__<=0.8000000 ~ "Percentile 3",
-Lvn__<=0.8522078 ~ "Percentile 2",
-Lvn__<=1.0000000 ~ "Percentile 1",
+Lvn__<=0.4620779 ~ "0-10",
+Lvn__<=0.5870130 ~ "10-20",
+Lvn__<=0.6389610 ~"20-30",
+Lvn__<=0.6727273~ "30-40",
+Lvn__<=0.7116883~ "40-50",
+Lvn__<=0.7361039 ~ "50-60",
+Lvn__<=0.7696104 ~ "60-70",
+Lvn__<=0.8000000 ~ "70-80",
+Lvn__<=0.8522078 ~ "80-90",
+Lvn__<=1.0000000 ~ "90-100",
 TRUE ~ "NA"))
 
 #define the levels to plot 
-levels(districts_info$Poverty_Percentile) = c("Percentile 10", "Percentile 29", "Percentile 8", "Percentile 7", "Percentile 6", "Percentile 5", "Percentile 4", "Percentile 3", "Percentile 2", "Percentile 1")
+levels(districts_info$Poverty_Percentile) =c("0-10", "10-20", "20-30", "30-40", "40-50", "50-60", "60-70", "70-80", "80-90", "90-100")
 
 #Percentiles for climate vulnerability
 quantile(districts_info$Clmt_vln_1,  probs = seq(0, 1,1/10))
 
-districts_info = districts_info%>%mutate(Climate_Vul_Percentile = case_when(
-Clmt_vln_1<=0.3447433 ~ "Percentile 10",
-Clmt_vln_1<=0.4058680 ~ "Percentile 9",
-Clmt_vln_1<=0.4523227 ~"Percentile 8",
-Clmt_vln_1<=0.5012225~ "Percentile 7",
-Clmt_vln_1<=0.5550122~ "Percentile 6",
-Clmt_vln_1<=0.5941320 ~ "Percentile 5",
-Clmt_vln_1<=0.6413203 ~ "Percentile 4",
-Clmt_vln_1<=0.6894866 ~ "Percentile 3",
-Clmt_vln_1<=0.7579462 ~ "Percentile 2",
-Clmt_vln_1<=1.0000000 ~ "Percentile 1",
+districts_info = districts_info%>%mutate(Climate_Vul_Percentile = case_when(Clmt_vln_1<=0.3447433 ~ "0-10",
+Clmt_vln_1<=0.4058680 ~ "10-20",
+Clmt_vln_1<=0.4523227 ~"20-30",
+Clmt_vln_1<=0.5012225~ "30-40",
+Clmt_vln_1<=0.5550122~ "40-50",
+Clmt_vln_1<=0.5941320 ~ "50-60",
+Clmt_vln_1<=0.6413203 ~ "60-70",
+Clmt_vln_1<=0.6894866 ~ "70-80",
+Clmt_vln_1<=0.7579462 ~ "80-90",
+Clmt_vln_1<=1.0000000 ~ "90-100",
 TRUE ~ "NA"))
 
 #define the levels to plot 
-levels(districts_info$Climate_Vul_Percentile) = c("Percentile 10", "Percentile 29", "Percentile 8", "Percentile 7", "Percentile 6", "Percentile 5", "Percentile 4", "Percentile 3", "Percentile 2", "Percentile 1")
+levels(districts_info$Climate_Vul_Percentile) = c("0-10", "10-20", "20-30", "30-40", "40-50", "50-60", "60-70", "70-80", "80-90", "90-100")
 
 #Percentiles for Strassburg dataset
 quantile(districts_info$Strassburg_Scaled_final,  probs = seq(0, 1,1/10))
 
-districts_info = districts_info%>%mutate(Strassburg_Percentile = case_when(
-Strassburg_Scaled_final<=0.44012024 ~ "Percentile 10",
-Strassburg_Scaled_final<=0.55204775 ~ "Percentile 9",
-Strassburg_Scaled_final<=0.65949414 ~"Percentile 8",
-Strassburg_Scaled_final<=0.70312745~ "Percentile 7",
-Strassburg_Scaled_final<=0.74401004~ "Percentile 6",
-Strassburg_Scaled_final<=0.77339286 ~ "Percentile 5",
-Strassburg_Scaled_final<=0.80372271 ~ "Percentile 4",
-Strassburg_Scaled_final<=0.83253145 ~ "Percentile 3",
-Strassburg_Scaled_final<=0.86876068 ~ "Percentile 2",
-Strassburg_Scaled_final<=0.95653409 ~ "Percentile 1",
+districts_info = districts_info%>%mutate(Strassburg_Percentile = case_when(Strassburg_Scaled_final<=0.44012024 ~ "0-10",
+Strassburg_Scaled_final<=0.55204775 ~ "10-20",
+Strassburg_Scaled_final<=0.65949414 ~"20-30",
+Strassburg_Scaled_final<=0.70312745~ "30-40",
+Strassburg_Scaled_final<=0.74401004~ "40-50",
+Strassburg_Scaled_final<=0.77339286 ~ "50-60",
+Strassburg_Scaled_final<=0.80372271 ~ "60-70",
+Strassburg_Scaled_final<=0.83253145 ~ "70-80",
+Strassburg_Scaled_final<=0.86876068 ~ "80-90",
+Strassburg_Scaled_final<=0.95653409 ~ "90-100",
 TRUE ~ "NA"))
 
 #define the levels to plot 
-levels(districts_info$Strassburg_Percentile) = c("Percentile 10", "Percentile 29", "Percentile 8", "Percentile 7", "Percentile 6", "Percentile 5", "Percentile 4", "Percentile 3", "Percentile 2", "Percentile 1")
+levels(districts_info$Strassburg_Percentile) = c("0-10", "10-20", "20-30", "30-40", "40-50", "50-60", "60-70", "70-80", "80-90", "90-100")
 
 #Find districts with agreement 
 districts_info$People_Strassburg_Percent_Match = ifelse(districts_info$People_Percentile == districts_info$Strassburg_Percentile, "Agreement", "No agreement")
