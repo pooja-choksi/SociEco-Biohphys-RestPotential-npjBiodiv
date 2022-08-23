@@ -85,23 +85,35 @@ districts_info = districts_info%>%mutate(tenure_max_cat =
            tenure_max == Tt_F_ ~ "Forest", 
            TRUE ~ "NA"))
 
-biophys_people_scale1 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = strass_rank, y= P_C_R, shape = tenure_max_cat, color = Clmt_vlnrb, size = Lvng_), alpha = 0.6)+
-theme_bw()+scale_color_viridis(option = "D")+
-  scale_y_continuous(name = "District rank according to people-centric restoration opportunity") + scale_x_continuous(name="District rank according to biophysical restoration potential")+ 
-   geom_vline(xintercept =274, linetype="dashed") + geom_hline(yintercept = 275, linetype="dashed")+ labs(color = "Climate Vulnerability", size = "Poverty %", shape = "Dominant tenure regime")+expand_limits(y = 555) 
+#Strassburg potential v/s People-centric restoration potential
+levels(districts_info$tenure_max_cat) = c("Forest", "Common", "Individual")
 
-#alternative plot
-biophys_people_scale2 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Pp__M, shape = tenure_max_cat, color = Clmt_vlnrb, size = Lvng_), alpha = 0.6)+theme_bw()+scale_color_viridis(option = "D")+ scale_y_continuous(name = "People-centric restoration opportunity")+ scale_x_continuous(name="Biophysical restoration potential")+ geom_vline(xintercept =0.5, linetype="dashed") + geom_hline(yintercept = 0.5, linetype="dashed")+ labs(color = "Climate Vulnerability", size = "Poverty %", shape = "Dominant tenure regime")
+tenure_category = c("#999933","#117733", "#E69F00")
+
+biophys_people_scale1 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Pp__M, color = tenure_max_cat,),size = 3, alpha = 0.6)+theme_bw()+scale_color_manual(values = tenure_category)+ scale_y_continuous(name = "People-centric restoration opportunity")+ scale_x_continuous(name="Biophysical restoration potential")+ geom_vline(xintercept =0.74401004, linetype="dashed") + geom_hline(yintercept =0.6317055, linetype="dashed")+ labs(color ="Dominant land tenure")
 
 #climate vulnerability v/s biophysical potential 
-biophys_people_scale2 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Clmt_vln_1, shape = tenure_max_cat, color = Clmt_vln_1, size = 3), alpha = 0.6)+theme_bw()+scale_color_viridis(option = "D")+ scale_y_continuous(name = "Climate vulnerability")+ scale_x_continuous(name="Biophysical restoration potential")+ geom_vline(xintercept =0.5, linetype="dashed") + geom_hline(yintercept = 0.5, linetype="dashed")+ labs(color = "Climate Vulnerability", shape = "Dominant tenure regime")
+levels(districts_info$tenure_max_cat) = c("Forest", "Common", "Individual")
+
+tenure_category = c("#999933","#117733", "#E69F00")
+
+biophys_people_scale2 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Clmt_vln_1, color= tenure_max_cat),size=3, alpha = 0.6)+theme_bw()+scale_color_manual(values = tenure_category)+ scale_y_continuous(limits = c(0,1), name = "Climate vulnerability")+ scale_x_continuous(limits =c(0,1), name="Biophysical restoration potential")+ geom_vline(xintercept =0.74401004, linetype="dashed") + geom_hline(yintercept = 0.5550122, linetype="dashed")+ labs(color = "Dominant land tenure", shape = "Dominant tenure regime")
 
 biophys_people_scale2
 
-#climate vulnerability v/s biophysical potential 
-biophys_people_scale3 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Lvn__, shape = tenure_max_cat, color = Lvn__, size = 3), alpha = 0.6)+theme_bw()+scale_color_viridis(option = "D")+ scale_y_continuous(name = "Poverty (Living standards)")+ scale_x_continuous(name="Biophysical restoration potential")+ geom_vline(xintercept =0.5, linetype="dashed") + geom_hline(yintercept = 0.5, linetype="dashed")+ labs(color = "Poverty", shape = "Dominant tenure regime")
+#POverty v/s biophysical potential 
+
+tenure_category = c("#999933","#117733", "#E69F00")
+
+biophys_people_scale3 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Lvn__, color= tenure_max_cat), size=3, alpha = 0.6)+theme_bw()+scale_color_manual(values = tenure_category)+ scale_y_continuous(limits = c(0,1), name = "Poverty (Living standards)")+ scale_x_continuous(limits =c(0,1), name="Biophysical restoration potential")+ geom_vline(xintercept =0.74401004, linetype="dashed") + geom_hline(yintercept = 0.7116883, linetype="dashed")+ labs(color = "Dominant land tenure", shape = "Dominant tenure regime")
 
 biophys_people_scale3
+
+#plot together
+install.packages("ggpubr")
+library(ggpubr)
+
+ggarrange(biophys_people_scale2, biophys_people_scale3,  common.legend = TRUE, ncol =2, nrow=1)
 
 ```
 
@@ -344,7 +356,7 @@ top_districts_tenure = top_districts%>%mutate(tenure_max_cat =
 #first remove the districts which don't have a value for climate vulnerability from the larger districts file and potential extracted
 districts= districts[!is.na(districts$Pp__M),]
 
-districts_final = sp::merge(districts, districts_info[c("tenure_max","tenure_max_cat","People_Percentile","Poverty_Percentile", "Climate_Vul_Percentile", "Strassburg_Percentile", "People_Strassburg_Percent_Match", "Prop_Indiv", "Prop_Common", "Prop_Unaccounted", "Prop_Forest","Poverty_Strassburg_Percent_Match", "Climate_Strassburg_Percent_Match", "Aspirational_District", "People_Strassburg_Percentile_Matched", "Poverty_Strassburg_Percentile_Matched", "Climate_Strassburg_Percentile_Matched", "NAME_1", "NAME_2")], by.x = c("NAME_1","NAME_2"), by.y= c("NAME_1", "NAME_2"), duplicateGeoms = T)
+districts_final = sp::merge(districts, districts_info[c("Strassburg_India_Clipped", "Strassburg_Scaled_final", "Aspirational_District", "tenure_max", "tenure_max_cat", "People_Percentile_Upper", "Poverty_Percentile_Upper", "Climate_Vul_Percentile_Upper", "Strassburg_Percentile_Upper", "People_Strassburg_Percent_Match", "People_Strassburg_Agreement", "Poverty_Strassburg_Agreement", "Climate_Vul_Strassburg_Agreement", "NAME_1", "NAME_2")], by.x = c("NAME_1","NAME_2"), by.y= c("NAME_1", "NAME_2"), duplicateGeoms = T)
 
 writeOGR(districts_final, layer = "districts_final", dsn= "District-MPI-Climate-Pop-Merged-Biophys-Percentile-Plot.shp", driver = "ESRI Shapefile")
 
