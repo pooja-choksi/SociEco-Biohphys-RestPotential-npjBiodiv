@@ -289,14 +289,14 @@ agreement$People_Percentile = as.factor(agreement$People_Percentile)
 options(scipen = 999)
 
 #Proportion of land available in each land tenure
-agreement_plot = agreement%>%dplyr::group_by(People_Percentile)%>%
-  dplyr::summarise(total = n(),
+district_prop_plot = districts_info%>%dplyr::group_by(People_Percentile_Upper)%>%
+  dplyr::summarise(#total = n(),
                    total_indiv = sum(Tt_I_), 
                    total_forest = sum(Tt_F_),
                    total_unaccounted = sum(Tt_U_),
                    total_common = sum(Tt_C_))
 
-agreement_plot = agreement_plot%>%mutate(Prop_Indiv = (total_indiv/(total_indiv+total_common+total_forest+total_unaccounted))*100,
+district_prop_plot = district_prop_plot%>%mutate(Prop_Indiv = (total_indiv/(total_indiv+total_common+total_forest+total_unaccounted))*100,
 
 Prop_Common = (total_common/(total_indiv+total_common+total_forest+total_unaccounted))*100,
 
@@ -308,23 +308,17 @@ Prop_Forest = (total_forest/(total_indiv+total_common+total_forest+total_unaccou
 install.packages("reshape2")
 library(reshape2)
 
-agreement_plot_long = agreement_plot[, -c(2:6)]
-agreement_plot_long = reshape2::melt(agreement_plot_long, id.vars = "People_Percentile")
+district_prop_plot_long = district_prop_plot[, -c(2:5)]
 
-#define the levels to plot 
-levels(agreement_plot_long$People_Percentile) = c("Percentile 1", "Percentile 2", 
-                                         "Percentile 3", "Percentile 4", 
-                                         "Percentile 5", "Percentile 6", 
-                                         "Percentile 7", "Percentile 8", 
-                                         "Percentile 9", "Percentile 10")
+district_prop_plot_long = reshape2::melt(district_prop_plot_long, id.vars = "People_Percentile_Upper")
 
 #plot
-agreement_stacked_barplot = 
-agreement_plot_long%>%
-  ggplot(aes(x = People_Percentile, y = value, fill = variable))+
+district_stacked_barplot = 
+district_prop_plot_long%>%
+  ggplot(aes(x = factor(People_Percentile_Upper), y = value, fill = variable))+
   geom_col(position = position_stack(reverse = TRUE))+theme_bw()+theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   scale_fill_manual(labels = c("Individual", "Common", "Unaccounted","Forest"),
-    values=c("#E69F00", "#999933", "#D55E00","#117733")) + labs(fill = "Land tenure/cover", x = "Percentiles", y = "Proportion of Tenure") + scale_x_discrete(name = "Percentiles", labels = c(">50%", ">60%", ">70%", ">80%", ">90%"))
+    values=c("#E69F00", "#999933", "#D55E00","#117733")) + labs(fill = "Land tenure/cover", x = "Percentiles", y = "Proportion of Tenure")+ scale_x_discrete(name = "Percentiles", label = c("<10%", ">10%", ">20%", ">30%", ">40%", ">50%", ">60%", ">70%", ">80%", ">90%"))
 
 agreement_stacked_barplot
 
