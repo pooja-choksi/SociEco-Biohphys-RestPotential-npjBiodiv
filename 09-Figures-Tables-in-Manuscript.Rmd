@@ -289,15 +289,28 @@ agreement$People_Percentile = as.factor(agreement$People_Percentile)
 options(scipen = 999)
 
 #Proportion of land available in each land tenure
-district_prop_plot = districts_info%>%dplyr::group_by(People_Percentile_Upper)%>%
+district_total_plot = districts_info%>%dplyr::group_by(People_Percentile_Upper)%>%
   dplyr::summarise(#total = n(),
                    total_indiv = sum(Tt_I_), 
                    total_forest = sum(Tt_F_),
                    total_unaccounted = sum(Tt_U_),
                    total_common = sum(Tt_C_))
 
-district_prop_plot = district_prop_plot%>%mutate(Prop_Indiv = (total_indiv/(total_indiv+total_common+total_forest+total_unaccounted))*100,
+#Bar plot of total hectares per percentile 
+district_total_plot_long = reshape2::melt(district_total_plot, id.vars = "People_Percentile_Upper")
 
+#plot
+district_stacked_barplot_totals = 
+district_total_plot_long%>%
+  ggplot(aes(x = factor(People_Percentile_Upper), y = value, fill = variable))+
+  geom_col(position = position_stack(reverse = TRUE))+theme_bw()+theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_fill_manual(labels = c("Individual", "Common", "Unaccounted","Forest"),
+    values=c("#E69F00", "#999933", "#D55E00","#117733")) + labs(fill = "Land tenure/cover", x = "Percentiles", y = "Proportion of Tenure")+ scale_x_discrete(name = "Percentiles", label = c("<10%", ">10%", ">20%", ">30%", ">40%", ">50%", ">60%", ">70%", ">80%", ">90%"))
+
+
+#Plot of prop of land tenure
+district_prop_plot = district_prop_plot%>%mutate(Prop_Indiv = (total_indiv/(total_indiv+total_common+total_forest+total_unaccounted))*100,
+                                                 
 Prop_Common = (total_common/(total_indiv+total_common+total_forest+total_unaccounted))*100,
 
 Prop_Unaccounted =(total_unaccounted/(total_indiv+total_common+total_forest+total_unaccounted))*100,
@@ -316,9 +329,9 @@ district_prop_plot_long = reshape2::melt(district_prop_plot_long, id.vars = "Peo
 district_stacked_barplot = 
 district_prop_plot_long%>%
   ggplot(aes(x = factor(People_Percentile_Upper), y = value, fill = variable))+
-  geom_col(position = position_stack(reverse = TRUE))+theme_bw()+theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  geom_col(position = position_stack(reverse = TRUE))+theme_bw()+theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "bottom")+
   scale_fill_manual(labels = c("Individual", "Common", "Unaccounted","Forest"),
-    values=c("#E69F00", "#999933", "#D55E00","#117733")) + labs(fill = "Land tenure/cover", x = "Percentiles", y = "Proportion of Tenure")+ scale_x_discrete(name = "Percentiles", label = c("<10%", ">10%", ">20%", ">30%", ">40%", ">50%", ">60%", ">70%", ">80%", ">90%"))
+    values=c("#E69F00", "#999933", "#D55E00","#117733")) + labs(fill = "Land tenure/cover", x = "Percentiles", y = "Proportion of Tenure")+ scale_x_discrete(name = "Percentiles", label = c("<10%", ">10%", ">20%", ">30%", ">40%", ">50%", ">60%", ">70%", ">80%", ">90%")) 
 
 agreement_stacked_barplot
 

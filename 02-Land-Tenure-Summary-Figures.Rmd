@@ -805,7 +805,7 @@ district_tenure_curves  = dist_rearranged%>%mutate(District_Name = factor(Distri
   #geom_point(aes(y= cum_forest_hectares/scaleRight), group = 1, color = "#117733")+
     scale_fill_manual(values = c("#aab539", "#5b70dd", "#d2a035", "#c13fa6", "#4fc271", "#d33680", "#4e8f2e", "#d27cde", "#41844a", "#dc375f", "#5dc3a3", "#b82d24", "#4ab4dd", "#e55744", "#517dc0", "#e37733", "#7956a3", "#9db269", "#a7487a", "#2e8871", "#cc5967", "#677328", "#a798e0", "#8c6d2c", "#db8ebb", "#a6572c", "#91567c", "#d79f66", "#9f494f", "#e3867c"))+ 
   scale_y_continuous(name = "Total hectares (in Millions)", labels = scales::label_number(unit = "M", scale = 1e-6))+scale_x_discrete(name = "District")+
-  theme_classic()+ theme(axis.title = element_text(size = 8), axis.text.x = element_blank(), axis.ticks.x = element_blank()) +theme(legend.position = "bottom")
+  theme_classic()+ theme(axis.title = element_text(size = 12), axis.text.x = element_blank(), axis.ticks.x = element_blank()) +theme(legend.position = "bottom", axis.text = element_text(size=10))
 
 district_tenure_curves
 
