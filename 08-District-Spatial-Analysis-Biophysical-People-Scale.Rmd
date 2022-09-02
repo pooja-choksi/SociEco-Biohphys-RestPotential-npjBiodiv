@@ -27,12 +27,12 @@ brancalion <- raster("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restorati
 
 strassburg = raster("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Restoration_Potential_Studies\\India_Clipped\\Strassburg_india_Clipped.tif")
 
-strassburg = raster("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Restoration_Potential_Studies\\Strassburg_et_al_2020\\scen_cb-bd_gradient.tif")
+strassburg_biodiversity_climate = raster("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Restoration_Potential_Studies\\Strassburg_et_al_2020\\scen_cb-bd_gradient.tif")
 
 wri = raster("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Restoration_Potential_Studies\\India_Clipped\\Potapov_India_Clipped.tif")
 
 #district shapefile with info on the people-centric variables
-districts = readOGR("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-District-Shapefiles\\District-MPI-Climate-Pop-Merged-V3.shp")
+districts = readOGR("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-District-Shapefiles\\District-MPI-Merged-593districts.shp")
   
 ```
 
@@ -46,6 +46,9 @@ brancalion_extracted_df <- as(brancalion_extracted, "data.frame")
 
 strassburg_extracted = raster::extract(strassburg, districts, fun = mean, na.rm = T, small = T, sp=TRUE)
 strassburg_extracted_df <- as(strassburg_extracted, "data.frame")
+
+strassburg_blioclim_extracted = raster::extract(strassburg_biodiversity_climate, districts, fun = mean, na.rm = T, small = T, sp=TRUE)
+strassburg_blioclim_extracted_df <- as(strassburg_blioclim_extracted, "data.frame")
 
 wri_extracted = raster::extract(wri, districts, fun= modal, na.rm = T, small= T, sp=TRUE)
 wri_extracted_df <- as(wri_extracted, "data.frame")

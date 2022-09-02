@@ -19,6 +19,8 @@ library(viridis)
 library(pals)
 library(rgdal)
 library(ggpubr)
+install.packages("ggpmisc")
+library(ggpmisc)
 
 ```
 
@@ -38,6 +40,16 @@ districts = readOGR("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoratio
 
 ```
 
+# SUPPLEMENTARY INFORMATION ON VARIABLES USED IN STUDY (Fig S1) 
+```{r message=FALSE, warning=FALSE, include=TRUE}
+
+#Correlation between climate vulnerability index and the living standards component of multidimensional poverty index
+ggplot(data = districts_info, aes(x = Lvn__, y = Clmt_vln_1)) +
+    stat_poly_line() +
+    stat_poly_eq() +
+    geom_point()+ theme_bw()+xlab("Living standards component of multidimensional poverty index")+ylab("Climate vulnerability index")
+
+```
 #COMBINE ASPIRATIONAL DISTRICTS TO DISTRICTS_INFO
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
@@ -254,7 +266,7 @@ agreement_climate_strassburg = districts_info%>%group_by(Climate_Vul_Strassburg_
 
 ```
 
-#REPORT THE DISTRICTS IN THE TOP AND BOTTOM PERCENTILES AND QUANTILES 
+#REPORT THE DISTRICTS IN THE TOP AND BOTTOM PERCENTILES AND QUANTILES (AND LAND TENURES IN THE QUANTILES)
 
 This chunk of code is used to generate the numbers reported in the main text of the paper. Refer to each table created in this chunk of code to compare with the numbers reported in paper
 
@@ -266,11 +278,23 @@ percentile_100_states = percentile_100_people%>%group_by(NAME_1)%>%count()
   
 #top percentile of poverty 
 percentile_100_poverty = districts_info%>%filter(Poverty_Percentile_Upper == "100")
+
 percentile_100_poverty_states = percentile_100_poverty%>%group_by(NAME_1)%>%count()
+
+#report the land tenure in the top 50% of districts which have agreement with strassburg scale
+
+percentile_50_poverty_strassburg = districts_info%>%filter(Poverty_Strassburg_Agreement>=60)
+
+poverty_tenure_max_totals = percentile_50_poverty_strassburg%>%group_by(tenure_max_cat)%>%count()
+
+
+percentile_50_poverty_strassburg = districts_info%>%filter(Poverty_Strassburg_Agreement>=60)
+
 
 #top percentile of climate vulnerability
 percentile_100_climate = districts_info%>%filter(Climate_Vul_Percentile_Upper == "100")
 percentile_100_climate_states = percentile_100_climate%>%group_by(NAME_1)%>%count()
+
 
 ```
 
@@ -281,15 +305,15 @@ Within districts which have agreement across percentiles, this plot shows the di
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 #Filter out the agreement districts 
 
-#1. People-centric and Strassburg agreement percentiles 
-agreement = districts_info%>%filter(People_Strassburg_Agreement>1)
+#1. Poverty and Strassburg agreement percentiles 
+agreement = districts_info%>%filter(Poverty_Strassburg_Agreement>1)
 
-agreement$People_Percentile = as.factor(agreement$People_Percentile)
+agreement$Poverty_Percentile_Upper = as.factor(agreement$Poverty_Percentile_Upper)
 
 options(scipen = 999)
 
 #Proportion of land available in each land tenure
-district_total_plot = districts_info%>%dplyr::group_by(People_Percentile_Upper)%>%
+district_total_plot = districts_info%>%dplyr::group_by(Poverty_Percentile_Upper)%>%
   dplyr::summarise(#total = n(),
                    total_indiv = sum(Tt_I_), 
                    total_forest = sum(Tt_F_),
@@ -297,19 +321,18 @@ district_total_plot = districts_info%>%dplyr::group_by(People_Percentile_Upper)%
                    total_common = sum(Tt_C_))
 
 #Bar plot of total hectares per percentile 
-district_total_plot_long = reshape2::melt(district_total_plot, id.vars = "People_Percentile_Upper")
+district_total_plot_long = reshape2::melt(district_total_plot, id.vars = "Poverty_Percentile_Upper")
 
 #plot
 district_stacked_barplot_totals = 
 district_total_plot_long%>%
-  ggplot(aes(x = factor(People_Percentile_Upper), y = value, fill = variable))+
+  ggplot(aes(x = factor(Poverty_Percentile_Upper), y = value, fill = variable))+
   geom_col(position = position_stack(reverse = TRUE))+theme_bw()+theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   scale_fill_manual(labels = c("Individual", "Common", "Unaccounted","Forest"),
     values=c("#E69F00", "#999933", "#D55E00","#117733")) + labs(fill = "Land tenure/cover", x = "Percentiles", y = "Proportion of Tenure")+ scale_x_discrete(name = "Percentiles", label = c("<10%", ">10%", ">20%", ">30%", ">40%", ">50%", ">60%", ">70%", ">80%", ">90%"))
 
-
 #Plot of prop of land tenure
-district_prop_plot = district_prop_plot%>%mutate(Prop_Indiv = (total_indiv/(total_indiv+total_common+total_forest+total_unaccounted))*100,
+district_prop_plot = district_total_plot%>%mutate(Prop_Indiv = (total_indiv/(total_indiv+total_common+total_forest+total_unaccounted))*100,
                                                  
 Prop_Common = (total_common/(total_indiv+total_common+total_forest+total_unaccounted))*100,
 
@@ -323,12 +346,12 @@ library(reshape2)
 
 district_prop_plot_long = district_prop_plot[, -c(2:5)]
 
-district_prop_plot_long = reshape2::melt(district_prop_plot_long, id.vars = "People_Percentile_Upper")
+district_prop_plot_long = reshape2::melt(district_prop_plot_long, id.vars = "Poverty_Percentile_Upper")
 
 #plot
 district_stacked_barplot = 
 district_prop_plot_long%>%
-  ggplot(aes(x = factor(People_Percentile_Upper), y = value, fill = variable))+
+  ggplot(aes(x = factor(Poverty_Percentile_Upper), y = value, fill = variable))+
   geom_col(position = position_stack(reverse = TRUE))+theme_bw()+theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "bottom")+
   scale_fill_manual(labels = c("Individual", "Common", "Unaccounted","Forest"),
     values=c("#E69F00", "#999933", "#D55E00","#117733")) + labs(fill = "Land tenure/cover", x = "Percentiles", y = "Proportion of Tenure")+ scale_x_discrete(name = "Percentiles", label = c("<10%", ">10%", ">20%", ">30%", ">40%", ">50%", ">60%", ">70%", ">80%", ">90%")) 

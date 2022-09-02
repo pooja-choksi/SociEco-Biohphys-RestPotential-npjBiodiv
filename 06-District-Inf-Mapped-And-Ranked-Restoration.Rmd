@@ -28,8 +28,13 @@ Read in the spatial data to be combined with the tables from script 02.
 
 districts = readOGR("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-District-Shapefiles\\IND_adm2.shp")
 
+districts_as_df = as.data.frame(districts)
+
 #District level indices data 
 district_mpi_climate_summary = read.csv("District-Climate-MPI-Ranked.csv")
+
+#alternate file
+district_mpi_climate_summary = read.csv("District-MPi-Ranked-V2.csv")
 
 ```
 
@@ -43,7 +48,9 @@ state_names_missing =  setdiff(districts$NAME_1, district_mpi_climate_summary$St
 state_names_missing
 
 #recode the state names to match the spatial data 
-district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(State = recode(State, "Jammu And Kashmir" ="Jammu and Kashmir"))
+district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(State = recode(State, "Jammu And Kashmir" ="Jammu and Kashmir", 
+"Andaman And Nicobar Islands" = "Andaman and Nicobar", 
+"Dadra And Nagar Haveli" = "Dadra and Nagar Haveli"))
 
 state_names_missing 
 #still missing districts are Union territories for which we don't have climate vulnerability data
@@ -59,6 +66,13 @@ district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(Dist
 #"Kanker" = "Uttar Bastar Kanker",
 # "Sonepur" ="Subarnapur",
 "Baudh" ="Bauda",
+"North & Middle Andaman" = "North and Middle Andaman",
+"Nicobars" = "Nicobar Islands",
+"Dadra & Nagar Havel" = "Dadra and Nagar Haveli",
+"East District" = "East Sikkim",
+"West District" = "West Sikkim",
+"North District" = "North Sikkim",
+"South District" = "South Sikkim",
 # "Shopian" ="Shupiyan",
 # "Kamrup Metro" = "Kamrup Metropolitan",
 # "Deogarh" ="Debagarh",
@@ -113,7 +127,7 @@ district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(Dist
 "Korea (Koriya)" = "Koriya",
 # "Dang" ="The Dangs",
 "Bara Banki" = "Barabanki",
-# "Chikkaballapura" ="Chikballapura",
+"Chikkaballapura" ="Chikballapura",
 # "Ballari" = "Bellary",
 # "Davangere" ="Davanagere",
 # "Kalaburagi" ="Gulbarga",
@@ -174,7 +188,7 @@ district_mpi_climate_summary = district_mpi_climate_summary%>%dplyr::mutate(Dist
 district_names_missing =  setdiff(district_mpi_climate_summary$District_Name,
 districts$NAME_2)   # elements in first NOT in second
 
-#no districts missing
+#9 districts missing becuase they're not in the dataset of land use data
 
 ```
 
@@ -185,6 +199,10 @@ COMBINE THE SPATIAL DATA WITH THE DISTRICT-MPI- CLIMATE DATA
 #Combine the spatial data with district level data
 districts_merged <-  sp::merge(districts, district_mpi_climate_summary, by.x = c("NAME_2", "NAME_1"),by.y = c("District_Name", "State"),duplicateGeoms = T)
 
+#only MPI and land use data
+writeOGR(obj = districts_merged, layer = "districts", dsn= "District-MPI-Merged-593districts.shp", driver = "ESRI Shapefile")
+
+#original dataset with MPi and climate
 writeOGR(obj = districts_merged, layer = "districts", dsn= "District-MPI-Climate-Pop-Merged-V3.shp", driver = "ESRI Shapefile")
 
 ```

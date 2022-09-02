@@ -591,6 +591,7 @@ CREATE A RANK BASED ON MPI, CLIMATE VULNERABILITY AND TOTAL POPULATION
 This data will be stitched with spatial data at the district level in
 
 ```{r message=FALSE, warning=FALSE, include=TRUE }
+district_mpi_climate = mpi_district_summary
 
 #convert Living standards to a 0 to 1 scale 
 range01 <- function(x){((x-min(x))/(max(x)-min(x)))}
@@ -667,6 +668,7 @@ SAVE THE CSV WHICH INCLUDES BOTH METHODS
 
 #write csv 
 write.csv(district_mpi_climate, "District-Climate-MPI-Ranked.csv")
+write.csv(district_mpi_climate, "District-MPI-Ranked-V2.csv")
 
 ```
 
