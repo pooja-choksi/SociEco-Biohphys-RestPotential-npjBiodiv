@@ -123,7 +123,6 @@ districts_df_final <- as(districts_final, "data.frame")
 write.csv(districts_df_final, "District-Climate-MPI-Biophys-Ranked.csv")
 
 #alternate file
-
 write.csv(districts_df_final, "District-MPI-Biophys-Ranked.csv")
 
 ```

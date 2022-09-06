@@ -19,7 +19,6 @@ library(viridis)
 library(pals)
 library(rgdal)
 library(ggpubr)
-install.packages("ggpmisc")
 library(ggpmisc)
 
 ```
@@ -32,12 +31,17 @@ Read in all the data from previous scripts that we need for plots and tables.
 #For all questions, we need this data
 districts_info = read.csv("District-Climate-MPI-Biophys-Ranked.csv")
 
+#alternative csv 
+districts_info = read.csv("District-MPI-Biophys-Ranked.csv")
+
 #list of aspirational districts from Phase 1
 aspirational_districts = read.csv("Aspirational-Districts-Phase1.csv")
 
 #district shapefile with info on the people-centric variables
 districts = readOGR("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-District-Shapefiles\\District-MPI-Climate-Pop-Merged-Biophys.shp")
 
+#alternative districts shp file 
+districts = readOGR("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-District-Shapefiles\\District-MPI-Merged-Biophys.shp")
 ```
 
 # SUPPLEMENTARY INFORMATION ON VARIABLES USED IN STUDY (Fig S1) 
@@ -50,6 +54,18 @@ ggplot(data = districts_info, aes(x = Lvn__, y = Clmt_vln_1)) +
     geom_point()+ theme_bw()+xlab("Living standards component of multidimensional poverty index")+ylab("Climate vulnerability index")
 
 ```
+
+#CALCULATE PROPRTION OF LAND TENURE IN EACH DISTRICT
+```{r}
+
+#Plot of prop of land tenure
+districts_info = districts_info%>%mutate(Prop_Indiv = (Ttl_In_/(Ttl_In_+Ttl_Cm_+Ttl_Fr_+Ttl_Un_))*100,
+Prop_Common = (Ttl_Cm_/(Ttl_In_+Ttl_Cm_+Ttl_Fr_+Ttl_Un_))*100,
+Prop_Unaccounted =(Ttl_Un_/(Ttl_In_+Ttl_Cm_+Ttl_Fr_+Ttl_Un_))*100,
+Prop_Forest = (Ttl_Fr_/(Ttl_In_+Ttl_Cm_+Ttl_Fr_+Ttl_Un_))*100)
+
+```
+
 #COMBINE ASPIRATIONAL DISTRICTS TO DISTRICTS_INFO
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
@@ -90,12 +106,12 @@ The chunk of code below creates a scatterplot where each district's biophysical 
 #Remove the duplicates 
 districts_info = districts_info [!duplicated(districts_info[c("NAME_1","NAME_2")]),]
 
-districts_info$tenure_max  = apply(districts_info[c("Tt_C_", "Tt_I_", "Tt_F_")], 1, max)
+districts_info$tenure_max  = apply(districts_info[c("Ttl_Cm_", "Ttl_In_", "Ttl_Fr_")], 1, max)
 
 districts_info = districts_info%>%mutate(tenure_max_cat = 
- case_when(tenure_max == Tt_I_ ~ "Individual",
-           tenure_max == Tt_C_ ~ "Common",
-           tenure_max == Tt_F_ ~ "Forest", 
+ case_when(tenure_max == Ttl_In_ ~ "Individual",
+           tenure_max == Ttl_Cm_ ~ "Common",
+           tenure_max == Ttl_Fr_ ~ "Forest", 
            TRUE ~ "NA"))
 
 #Strassburg potential v/s People-centric restoration potential
@@ -103,7 +119,7 @@ levels(districts_info$tenure_max_cat) = c("Forest", "Common", "Individual")
 
 tenure_category = c("#999933","#117733", "#E69F00")
 
-biophys_people_scale1 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Pp__M, color = tenure_max_cat,),size = 3, alpha = 0.6)+theme_bw()+scale_color_manual(values = tenure_category)+ scale_y_continuous(name = "People-centric restoration opportunity")+ scale_x_continuous(name="Biophysical restoration potential")+ geom_vline(xintercept =0.74401004, linetype="dashed") + geom_hline(yintercept =0.6317055, linetype="dashed")+ labs(color ="Dominant land tenure")
+biophys_people_scale1 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Lvng_s_, color = tenure_max_cat,),size = 3, alpha = 0.6)+theme_bw()+scale_color_manual(values = tenure_category, labels = c("Common", "Forest", "Private"))+ scale_y_continuous(name = "People-centric restoration opportunity")+ scale_x_continuous(name="Biophysical restoration potential")+ geom_vline(xintercept =0.74401004, linetype="dashed") + geom_hline(yintercept =0.6317055, linetype="dashed")+ labs(color ="Dominant land tenure")
 
 #climate vulnerability v/s biophysical potential 
 levels(districts_info$tenure_max_cat) = c("Forest", "Common", "Individual")
@@ -147,19 +163,19 @@ Pp__M<=0.9506494 ~ 100,
 TRUE ~ 0))
 
 #Percentiles for living standards of MPI 
-quantile(districts_info$Lvn__,  probs = seq(0, 1,1/10))
+quantile(districts_info$Lvng_s_,  probs = seq(0, 1,1/10))
 
 districts_info = districts_info%>%mutate(Poverty_Percentile_Upper = case_when(
-Lvn__<=0.4620779 ~ 10,
-Lvn__<=0.5870130 ~ 20,
-Lvn__<=0.6389610 ~ 30,
-Lvn__<=0.6727273 ~ 40,
-Lvn__<=0.7116883 ~ 50,
-Lvn__<=0.7361039 ~ 60,
-Lvn__<=0.7696104 ~ 70,
-Lvn__<=0.8000000 ~ 80,
-Lvn__<=0.8522078 ~ 90,
-Lvn__<=1.0000000 ~ 100,
+Lvng_s_<=0.47341772 ~ 10,
+Lvng_s_<=0.59392405 ~ 20,
+Lvng_s_<=0.64810127 ~ 30,
+Lvng_s_<=0.67898734 ~ 40,
+Lvng_s_<=0.71645570 ~ 50,
+Lvng_s_<=0.74177215 ~ 60,
+Lvng_s_<=0.77113924 ~ 70,
+Lvng_s_<=0.80506329 ~ 80,
+Lvng_s_<=0.85620253 ~ 90,
+Lvng_s_<=1.00000000 ~ 100,
 TRUE ~ 0))
 
 #Percentiles for climate vulnerability
@@ -180,15 +196,15 @@ TRUE ~ 0))
 #Percentiles for Strassburg dataset
 quantile(districts_info$Strassburg_Scaled_final,  probs = seq(0, 1,1/10))
 
-districts_info = districts_info%>%mutate(Strassburg_Percentile_Upper = case_when(Strassburg_Scaled_final<=0.44012024 ~ 10,
-Strassburg_Scaled_final<=0.55204775 ~ 20,
-Strassburg_Scaled_final<=0.65949414 ~30,
-Strassburg_Scaled_final<=0.70312745~ 40,
-Strassburg_Scaled_final<=0.74401004~ 50,
-Strassburg_Scaled_final<=0.77339286 ~ 60,
-Strassburg_Scaled_final<=0.80372271 ~ 70,
-Strassburg_Scaled_final<=0.83253145 ~ 80,
-Strassburg_Scaled_final<=0.86876068 ~ 90,
+districts_info = districts_info%>%mutate(Strassburg_Percentile_Upper = case_when(Strassburg_Scaled_final<=0.4165800 ~ 10,
+Strassburg_Scaled_final<=0.5529359 ~ 20,
+Strassburg_Scaled_final<=0.6591955 ~30,
+Strassburg_Scaled_final<=0.7021665~ 40,
+Strassburg_Scaled_final<=0.7420543~ 50,
+Strassburg_Scaled_final<=0.7735714 ~ 60,
+Strassburg_Scaled_final<=0.8034219 ~ 70,
+Strassburg_Scaled_final<=0.8319207 ~ 80,
+Strassburg_Scaled_final<=0.8688850 ~ 90,
 Strassburg_Scaled_final<=0.9565341 ~ 100,
 TRUE ~ 0))
 
@@ -295,6 +311,14 @@ percentile_50_poverty_strassburg = districts_info%>%filter(Poverty_Strassburg_Ag
 percentile_100_climate = districts_info%>%filter(Climate_Vul_Percentile_Upper == "100")
 percentile_100_climate_states = percentile_100_climate%>%group_by(NAME_1)%>%count()
 
+#agreement between poverty and biophysical potential 
+poverty_strass_agreement_100 = districts_info%>%filter(Poverty_Strassburg_Agreement == "100")
+
+poverty_strass_agreement_90 = districts_info%>%filter(Poverty_Strassburg_Agreement == "90")
+
+poverty_strass_agreement_50 = districts_info%>%filter(Poverty_Strassburg_Agreement == "1")
+
+kerala= districts_info%>%filter(NAME_1 == "Kerala")
 
 ```
 
