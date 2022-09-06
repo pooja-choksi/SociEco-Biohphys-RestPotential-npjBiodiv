@@ -93,24 +93,18 @@ potential_extracted$Strassburg_bioclim_Scaled = range01(potential_extracted$scen
 potential_extracted$Strassburg_Scaled = (potential_extracted$Strassburg_India_Clipped - min(potential_extracted$Strassburg_India_Clipped, na.rm= TRUE))/(max(potential_extracted$Strassburg_India_Clipped, na.rm=TRUE) - min(potential_extracted$Strassburg_India_Clipped, na.rm=TRUE))
 
 #since the Strassburg paper has a scale of 0-20, we need to first rescale it to a 0 to 100 and then divide to scale it from 0 to 1
-
+library(scales)
 potential_extracted$Strassburg_Scaled_100 <-  rescale(potential_extracted$Strassburg_India_Clipped, from = c(0, 20), to = c(0, 100), na,rm=T)
 
 potential_extracted$Strassburg_Scaled_final <- (potential_extracted$Strassburg_Scaled_100/100)
 
-#Rank the districts as per Strassburg
-#reorder the districts in descending order of MPI
-potential_extracted  <- potential_extracted [order(potential_extracted$Strassburg_Scaled_final, decreasing=TRUE),]
-
-#assign each district a rank
-potential_extracted= potential_extracted%>% mutate(strass_rank = match(Strassburg_Scaled_final, unique(Strassburg_Scaled_final)))
-
 #merge the extracted data with districts shapefile
 
 #first remove the districts which don't have a value for climate vulnerability from the larger districts file and potential extracted
-districts= districts[!is.na(districts$Pp__M),]
+districts= districts[!is.na(districts$Lvng_st),]
 
-districts_final = sp::merge(districts, potential_extracted[c("Strassburg_India_Clipped", "Strassburg_bioclim_Scaled", "scen_cb.bd_gradient", "Strassburg_Scaled_final", "NAME_1", "NAME_2")], by.x = c("NAME_1","NAME_2"), by.y= c("NAME_1", "NAME_2"), duplicateGeoms = T)
+districts_final = sp::merge(districts, potential_extracted[c("Strassburg_India_Clipped", #"Strassburg_bioclim_Scaled", "scen_cb.bd_gradient",
+"Strassburg_Scaled_final", "NAME_1", "NAME_2")], by.x = c("NAME_1","NAME_2"), by.y= c("NAME_1", "NAME_2"), duplicateGeoms = T)
 
 writeOGR(districts_final, layer = "districts_final", dsn= "District-MPI-Climate-Pop-Merged-Biophys.shp", driver = "ESRI Shapefile")
 

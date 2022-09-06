@@ -58,7 +58,7 @@ ggplot(data = districts_info, aes(x = Lvn__, y = Clmt_vln_1)) +
 #CALCULATE PROPRTION OF LAND TENURE IN EACH DISTRICT
 ```{r}
 
-#Plot of prop of land tenure
+#calculate prop of land tenures
 districts_info = districts_info%>%mutate(Prop_Indiv = (Ttl_In_/(Ttl_In_+Ttl_Cm_+Ttl_Fr_+Ttl_Un_))*100,
 Prop_Common = (Ttl_Cm_/(Ttl_In_+Ttl_Cm_+Ttl_Fr_+Ttl_Un_))*100,
 Prop_Unaccounted =(Ttl_Un_/(Ttl_In_+Ttl_Cm_+Ttl_Fr_+Ttl_Un_))*100,
@@ -146,20 +146,24 @@ ggarrange(biophys_people_scale2, biophys_people_scale3,  common.legend = TRUE, n
 
 This chunk of code uses the exact cut offs for the percentiles to see the synergy between districts
 
-```{r}
-#Percentiles for people-centric scale 
-quantile(districts_info$Pp__M,  probs = seq(0, 1,1/10))
+```{r message=FALSE, warning=FALSE, include=TRUE}
 
-districts_info = districts_info%>%mutate(People_Percentile_Upper = case_when(Pp__M <=0.4445172 ~ 10,
-Pp__M<=0.5135141~ 20,
-Pp__M<=0.5573356 ~ 30,
-Pp__M<=0.6001708~ 40,
-Pp__M<=0.6317055~ 50,
-Pp__M<=0.6610663 ~ 60,
-Pp__M<=0.6912787 ~ 70,
-Pp__M<=0.7253923 ~ 80,
-Pp__M<=0.7628635 ~ 90,
-Pp__M<=0.9506494 ~ 100,
+#Percentiles for Strassburg dataset
+#remove any NAs in the data
+districts_info= districts_info[!is.na(districts_info$Strassburg_Scaled_final),]
+
+quantile(districts_info$Strassburg_Scaled_final,  probs = seq(0, 1,1/10))
+
+districts_info = districts_info%>%mutate(Strassburg_Percentile_Upper = case_when(Strassburg_Scaled_final<=0.4165800 ~ 10,
+Strassburg_Scaled_final<=0.5529359 ~ 20,
+Strassburg_Scaled_final<=0.6591955 ~30,
+Strassburg_Scaled_final<=0.7021665 ~ 40,
+Strassburg_Scaled_final<=0.7420543 ~ 50,
+Strassburg_Scaled_final<=0.7735714 ~ 60,
+Strassburg_Scaled_final<=0.8034219 ~ 70,
+Strassburg_Scaled_final<=0.8319207 ~ 80,
+Strassburg_Scaled_final<=0.8688850 ~ 90,
+Strassburg_Scaled_final<=0.9565341 ~ 100,
 TRUE ~ 0))
 
 #Percentiles for living standards of MPI 
@@ -178,48 +182,6 @@ Lvng_s_<=0.85620253 ~ 90,
 Lvng_s_<=1.00000000 ~ 100,
 TRUE ~ 0))
 
-#Percentiles for climate vulnerability
-quantile(districts_info$Clmt_vln_1,  probs = seq(0, 1,1/10))
-
-districts_info = districts_info%>%mutate(Climate_Vul_Percentile_Upper = case_when(Clmt_vln_1<=0.3447433 ~ 10,
-Clmt_vln_1<=0.4058680 ~ 20,
-Clmt_vln_1<=0.4523227 ~ 30,
-Clmt_vln_1<=0.5012225~ 40,
-Clmt_vln_1<=0.5550122~ 50,
-Clmt_vln_1<=0.5941320 ~ 60,
-Clmt_vln_1<=0.6413203 ~ 70,
-Clmt_vln_1<=0.6894866 ~ 80,
-Clmt_vln_1<=0.7579462 ~ 90,
-Clmt_vln_1<=1.0000000 ~ 100,
-TRUE ~ 0))
-
-#Percentiles for Strassburg dataset
-quantile(districts_info$Strassburg_Scaled_final,  probs = seq(0, 1,1/10))
-
-districts_info = districts_info%>%mutate(Strassburg_Percentile_Upper = case_when(Strassburg_Scaled_final<=0.4165800 ~ 10,
-Strassburg_Scaled_final<=0.5529359 ~ 20,
-Strassburg_Scaled_final<=0.6591955 ~30,
-Strassburg_Scaled_final<=0.7021665~ 40,
-Strassburg_Scaled_final<=0.7420543~ 50,
-Strassburg_Scaled_final<=0.7735714 ~ 60,
-Strassburg_Scaled_final<=0.8034219 ~ 70,
-Strassburg_Scaled_final<=0.8319207 ~ 80,
-Strassburg_Scaled_final<=0.8688850 ~ 90,
-Strassburg_Scaled_final<=0.9565341 ~ 100,
-TRUE ~ 0))
-
-#Agreement between People percentile and Strassburg
-districts_info = districts_info%>%mutate(People_Strassburg_Agreement = case_when(People_Percentile_Upper >=100 & Strassburg_Percentile_Upper >= 100~ 100,
-People_Percentile_Upper >=90 & Strassburg_Percentile_Upper >=90~ 90,
-People_Percentile_Upper >=80 & Strassburg_Percentile_Upper >=80~ 80,
-People_Percentile_Upper >=70 & Strassburg_Percentile_Upper >=70~ 70,
-People_Percentile_Upper >=60 & Strassburg_Percentile_Upper >=60~ 60,
-#People_Percentile_Upper >= 50 & Strassburg_Percentile_Upper >=50~ 50,
-People_Percentile_Upper<=50 & Strassburg_Percentile_Upper<=50 ~ 1,
-People_Percentile_Upper<=50 & Strassburg_Percentile_Upper>=50 ~ 2,
-People_Percentile_Upper>=50 & Strassburg_Percentile_Upper<=50 ~ 3,
-TRUE ~ 0))
-
 #Agreement between poverty and Strassburg
 districts_info = districts_info%>%mutate(Poverty_Strassburg_Agreement = case_when(Poverty_Percentile_Upper >=100 & Strassburg_Percentile_Upper >= 100~ 100,
 Poverty_Percentile_Upper >= 90 & Strassburg_Percentile_Upper >=90~ 90,
@@ -229,17 +191,16 @@ Poverty_Percentile_Upper >= 60 & Strassburg_Percentile_Upper >=60~ 60,
 #Poverty_Percentile_Upper >= 50 & Strassburg_Percentile_Upper >=50~ 50,
 Poverty_Percentile_Upper<= 50 & Strassburg_Percentile_Upper<= 50 ~ 1, Poverty_Percentile_Upper<= 50 & Strassburg_Percentile_Upper>= 50 ~ 2, Poverty_Percentile_Upper>= 50 & Strassburg_Percentile_Upper<= 50 ~ 3, TRUE ~ 0))
 
-#Agreement between climate vulnerabiltiy and Strassburg
-districts_info = districts_info%>%mutate(Climate_Vul_Strassburg_Agreement = case_when(Climate_Vul_Percentile_Upper >=100 & Strassburg_Percentile_Upper >= 100~ 100,
-Climate_Vul_Percentile_Upper >= 90 & Strassburg_Percentile_Upper >=90~ 90,
-Climate_Vul_Percentile_Upper >= 80 & Strassburg_Percentile_Upper >=80~ 80,
-Climate_Vul_Percentile_Upper >= 70 & Strassburg_Percentile_Upper >=70~ 70,
-Climate_Vul_Percentile_Upper >= 60 & Strassburg_Percentile_Upper >=60~ 60,
-#Climate_Vul_Percentile_Upper >= 50 & Strassburg_Percentile_Upper >=50~ 50,
-Climate_Vul_Percentile_Upper<= 50 & Strassburg_Percentile_Upper<= 50 ~ 1,
-Climate_Vul_Percentile_Upper<= 50 & Strassburg_Percentile_Upper>= 50 ~ 2,
-Climate_Vul_Percentile_Upper>= 50 & Strassburg_Percentile_Upper<= 50 ~ 3,
-TRUE ~ 0))
+#Agreement using quartiles (for map)
+quantile(districts_info$Lvng_s_,  probs = seq(0, 1,1/4))
+
+quantile(districts_info$Strassburg_Scaled_final,  probs = seq(0, 1,1/4))
+
+districts_info = districts_info%>%mutate(Poverty_Strassburg_Quartile_Upper = case_when(Lvng_s_<=0.62151899 & Strassburg_Scaled_final <=0.6159363~ 25,
+Lvng_s_<=0.71645570 & Strassburg_Scaled_final<=0.7420543 ~ 50,
+Lvng_s_<=0.79113925 & Strassburg_Scaled_final<=0.8184396~ 75,
+Lvng_s_<=1.0000000 & Strassburg_Scaled_final<=0.9565341~ 100,
+TRUE~ 0))
 
 ```
 
@@ -249,36 +210,15 @@ This chunk of code is used to produce tables SI 1,2,3____
 
 ```{r message=TRUE, warning=TRUE, include=FALSE}
 
-#S1: Table of districts ranked as per climate vulnerability scale. Here we show only the total districts from each state
-clim_vul_states = districts_info%>%filter(Climate_Vul_Percentile_Upper == 100)
-clim_states = clim_vul_states%>%group_by(NAME_1)%>%count()
-write.csv(clim_states, "TableS1-ClimVul-States-Total.csv")
+#S4: Table of aspirational districts in the top people-centric restoration scale 
+aspirational_poverty = districts_info%>%filter(Poverty_Percentile_Upper == 100 & Aspirational_District == "Aspirational_district")
 
-#S2: Table of districts ranked as per poverty % scale. Total of the districts per state
-poverty_states = districts_info%>%filter(Poverty_Percentile_Upper == 100)
-poverty_states = poverty_states%>%group_by(NAME_1)%>%count()
-write.csv(poverty_states, "TableS2-Poverty-States-Total.csv")
-
-#S3: Table of districts ranked as per people-centric scale. Total of districts per state 
-people_centirc_states = districts_info%>%filter(People_Percentile_Upper == 100)
-people_states = people_centirc_states%>%group_by(NAME_1)%>%count()
-write.csv(people_states, "TableS3-People-States-Total.csv")
-
-#S4: Table of aspirational districts in the top people-centricvrestoration scale 
-aspirational_people_centric = districts_info%>%filter(People_Percentile_Upper == 100 & Aspirational_District == "Aspirational_district")
-
-aspirational = aspirational_people_centric%>%group_by(NAME_1, NAME_2,Lvng_, Clmt_vlnrb)%>%count()
+aspirational = aspirational_poverty%>%group_by(NAME_1, NAME_2,Lvng_s_)%>%count()
 
 write.csv(aspirational, "TableS4-Aspirational-Districts-90thPer.csv")
 
-#1. People-centric and Strassburg agreement percentiles 
-agreement_people_strassburg = districts_info%>%group_by(People_Strassburg_Agreement)%>%count()
-
-#2. Poverty and Strassburg agreement percentiles
+#Poverty and Strassburg agreement percentiles
 agreement_poverty_strassburg = districts_info%>%group_by(Poverty_Strassburg_Agreement)%>%count()
-
-#3. Climate vulnerability Strassburg agreement percentiles
-agreement_climate_strassburg = districts_info%>%group_by(Climate_Vul_Strassburg_Agreement)%>%count()
 
 ```
 
