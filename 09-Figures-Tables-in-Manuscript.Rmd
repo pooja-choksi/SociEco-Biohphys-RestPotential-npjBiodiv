@@ -119,7 +119,7 @@ levels(districts_info$tenure_max_cat) = c("Forest", "Common", "Individual")
 
 tenure_category = c("#999933","#117733", "#E69F00")
 
-biophys_people_scale1 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Lvng_s_, color = tenure_max_cat,),size = 3, alpha = 0.6)+theme_bw()+scale_color_manual(values = tenure_category, labels = c("Non forest commons", "Forest commons", "Private"))+ scale_y_continuous(name = "Poverty (Living standards)")+ scale_x_continuous(name="Biophysical restoration potential")+ geom_vline(xintercept =0.7420543, linetype="dashed") + geom_hline(yintercept =0.71645570, linetype="dashed")+ labs(color ="Dominant land tenure")
+biophys_people_scale1 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Lvng_s_, color = tenure_max_cat,),size = 3, alpha = 0.6)+theme_bw()+theme( legend.position = "bottom")+scale_color_manual(values = tenure_category, labels = c("Non forest commons", "Forest commons", "Private"))+ scale_y_continuous(name = "Poverty (Living standards)")+ scale_x_continuous(name="Biophysical restoration potential")+ geom_vline(xintercept =0.7420543, linetype="dashed") + geom_hline(yintercept =0.71645570, linetype="dashed")+ labs(color ="Dominant land tenure")
 
 #climate vulnerability v/s biophysical potential 
 levels(districts_info$tenure_max_cat) = c("Forest", "Common", "Individual")
@@ -372,14 +372,20 @@ top_districts_tenure = top_districts%>%mutate(tenure_max_cat =
 #first remove the districts which don't have a value for climate vulnerability from the larger districts file and potential extracted
 districts= districts[!is.na(districts$Pp__M),]
 
-districts_final = sp::merge(districts, districts_info[c("Strassburg_India_Clipped", "Strassburg_Scaled_final", "Aspirational_District", "tenure_max", "tenure_max_cat", "People_Percentile_Upper", "Poverty_Percentile_Upper", "Climate_Vul_Percentile_Upper", "Strassburg_Percentile_Upper", "People_Strassburg_Percent_Match", "People_Strassburg_Agreement", "Poverty_Strassburg_Agreement", "Climate_Vul_Strassburg_Agreement", "NAME_1", "NAME_2")], by.x = c("NAME_1","NAME_2"), by.y= c("NAME_1", "NAME_2"), duplicateGeoms = T)
+districts_final = sp::merge(districts, districts_info[c("Strassburg_India_Clipped", "Strassburg_Scaled_final", "Aspirational_District", "tenure_max", "tenure_max_cat",   "Poverty_Percentile_Upper", "Strassburg_Percentile_Upper", "Prop_Indiv","Prop_Common", "Prop_Unaccounted", "Prop_Forest", "Poverty_Strassburg_Agreement","Poverty_Strassburg_Quartile_Upper", "NAME_1", "NAME_2")], by.x = c("NAME_1","NAME_2"), by.y= c("NAME_1", "NAME_2"), duplicateGeoms = T)
 
 writeOGR(districts_final, layer = "districts_final", dsn= "District-MPI-Climate-Pop-Merged-Biophys-Percentile-Plot.shp", driver = "ESRI Shapefile")
 
-#also create a dataframe from the shapefile to use for analysis below 
+#alternative shapefile 
+writeOGR(districts_final, layer = "districts_final", dsn= "District-MPI-Merged-Biophys-Percentile-Plot.shp", driver = "ESRI Shapefile")
+
+#also create a dataframe from the shapefile to use for analysis below
 districts_df_final <- as(districts_final, "data.frame")
 
 write.csv(districts_df_final, "District-Climate-MPI-Biophys-Ranked-Agreement-Percentiles.csv")
+
+#alternative file
+write.csv(districts_df_final, "District-MPI-Biophys-Ranked-Agreement-Percentiles.csv")
 
 ```
 
