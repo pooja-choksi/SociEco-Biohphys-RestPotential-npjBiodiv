@@ -318,7 +318,7 @@ district_prop_plot_long%>%
   ggplot(aes(x = factor(Poverty_Percentile_Upper), y = value, fill = variable))+
   geom_col(position = position_stack(reverse = TRUE))+theme_bw()+theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "bottom")+
   scale_fill_manual(labels = c("Private", "Nonforest commons", "Unaccounted land","Forest commons"),
-    values=c("#E69F00", "#999933", "#D55E00","#117733")) + labs(fill = "Land tenure", x = "Poverty (living standards)", y = "Proportion of Tenure")+ scale_x_discrete(name = "Poverty (living standards)", label = c("<10%", ">10%", ">20%", ">30%", ">40%", ">50%", ">60%", ">70%", ">80%", ">90%")) 
+    values=c("#E69F00", "#999933", "#D55E00","#117733")) + labs(fill = "Land tenure", x = "Poverty (living standards)", y = "Proportion of Tenure (%)")+ scale_x_discrete(name = "Poverty (living standards)", label = c("<10%", ">10%", ">20%", ">30%", ">40%", ">50%", ">60%", ">70%", ">80%", ">90%")) 
 
 district_stacked_barplot
 
