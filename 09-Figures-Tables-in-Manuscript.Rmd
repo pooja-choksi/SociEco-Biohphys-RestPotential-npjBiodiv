@@ -29,7 +29,7 @@ Read in all the data from previous scripts that we need for plots and tables.
 ```{r message = FALSE, warning=FALSE, include=TRUE}
 
 #For all questions, we need this data
-districts_info = read.csv("District-Climate-MPI-Biophys-Ranked.csv")
+#districts_info = read.csv("District-Climate-MPI-Biophys-Ranked.csv")
 
 #alternative csv 
 districts_info = read.csv("District-MPI-Biophys-Ranked.csv")
@@ -126,7 +126,7 @@ levels(districts_info$tenure_max_cat) = c("Forest", "Common", "Individual")
 
 tenure_category = c("#999933","#117733", "#E69F00")
 
-biophys_people_scale2 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Clmt_vln_1, color= tenure_max_cat),size=3, alpha = 0.6)+theme_bw()+scale_color_manual(values = tenure_category)+ scale_y_continuous(limits = c(0,1), name = "Climate vulnerability")+ scale_x_continuous(limits =c(0,1), name="Biophysical restoration potential")+ geom_vline(xintercept =0.74401004, linetype="dashed") + geom_hline(yintercept = 0.5550122, linetype="dashed")+ labs(color = "Dominant land tenure", shape = "Dominant tenure regime")
+biophys_people_scale2 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Clmt_vln_1, color= tenure_max_cat),size=3, alpha = 0.6)+theme_bw()+scale_color_manual(values = tenure_category, labels = c("Non forest commons", "Forest commons", "Private"))+ scale_y_continuous(limits = c(0,1), name = "Climate vulnerability")+ scale_x_continuous(limits =c(0,1), name="Biophysical restoration potential")+ geom_vline(xintercept =0.74401004, linetype="dashed") + geom_hline(yintercept = 0.5550122, linetype="dashed")+ labs(color = "Dominant land tenure", shape = "Dominant tenure regime")
 
 biophys_people_scale2
 
@@ -134,9 +134,11 @@ biophys_people_scale2
 
 tenure_category = c("#999933","#117733", "#E69F00")
 
-biophys_people_scale3 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Lvn__, color= tenure_max_cat), size=3, alpha = 0.6)+theme_bw()+scale_color_manual(values = tenure_category)+ scale_y_continuous(limits = c(0,1), name = "Poverty (Living standards)")+ scale_x_continuous(limits =c(0,1), name="Biophysical restoration potential")+ geom_vline(xintercept =0.74401004, linetype="dashed") + geom_hline(yintercept = 0.7116883, linetype="dashed")+ labs(color = "Dominant land tenure", shape = "Dominant tenure regime")
+biophys_people_scale3 = ggplot(districts_info) + geom_jitter(data= districts_info, aes(x = Strassburg_Scaled_final, y= Lvng_s_, color= tenure_max_cat), size=3, alpha = 0.6)+theme_bw()+scale_color_manual(values = tenure_category, labels = c("Non forest commons", "Forest commons", "Private"))+ scale_y_continuous(limits = c(0,1), name = "Poverty (Living standards)")+ scale_x_continuous(limits =c(0,1), name="Biophysical restoration potential")+ geom_vline(xintercept =0.74401004, linetype="dashed") + geom_hline(yintercept = 0.7116883, linetype="dashed")+ labs(color = "Dominant land tenure", shape = "Dominant tenure regime")+ theme(legend.position = "bottom")
 
 biophys_people_scale3
+
+ggsave(filename = "test3", device = "jpeg", dpi = 300, width = 1900, height = 1450, units = "px")
 
 ggarrange(biophys_people_scale2, biophys_people_scale3,  common.legend = TRUE, ncol =2, nrow=1)
 
