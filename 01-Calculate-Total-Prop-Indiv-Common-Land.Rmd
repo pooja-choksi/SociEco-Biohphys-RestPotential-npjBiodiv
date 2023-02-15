@@ -3,6 +3,7 @@ title: "People-centric Restoration: Assigning Different Land Tenures based on La
 author: "Pooja Choksi"
 date: "2022-06-03"
 output: html_document
+
 --
 
 # LAND USE-BASED TENURE ASSINGMENTS FOR INDIAN VILLAGES
