@@ -7,9 +7,9 @@ output: html_document
 
 # LAND USE-BASED TENURE ASSINGMENTS FOR INDIAN VILLAGES
 
-This dataset has been created using the Census 2011 land use records. The resords have been assigned tenures based on commonly accepted land tenure regimes across India. Details on the dataset can be found here: https://docs.google.com/document/d/1QS1E9VQGWX0HaQfXfcDWlG7fv6kZJn7oYxvjMaaQnF4/edit?usp=sharing
+This dataset has been created using the Census 2011 land use records. The resords have been assigned tenures based on commonly accepted de jure land tenure regimes across India. 
 
-We retrieved land use records from Census 2011(https://censusindia.gov.in/2011census/dchb/DCHB.html) for every district in the states and Union territories of India. We manually created csv files for each district within each state. To do so, we only selected the following columns of our interest in the land use records. From the data downloaded, For each village with a census code, the columns we selected are:
+We retrieved land use records from Census 2011(https://censusindia.gov.in/2011census/dchb/DCHB.html) for every district in the states and Union territories of India (As this data is owned by the Government of India, we are unable to share the datasheets downloaded from this website and used in this analaysis)x. We manually created csv files for each district within each state once we downloaded them from the website. From the data downloaded, For each village with a census code, the columns we selected are:
 1. Total population 
 2. Total number of households 
 3. Total area in hectares
@@ -28,7 +28,7 @@ Land use categories in Census 2011:
 10. Total irrigated land 
 11. Total unirrigated land 
 
-In the following code chunk, we combine and clean all the data from individual districts to create one country wide land use dataset. 
+In the following code chunk, we combine and clean all the data from individual districts to create one country wide land use dataset. Refer to methods section 'Data sources and preparation' for more details. 
 
 ```{r include = FALSE}
 
@@ -41,6 +41,8 @@ library(stringr)
 library(ggplot2)
 
 ```
+
+Combine all the sepeare district datasheets from the census website into one csv 
 
 ```{r message = FALSE, warning = FALSE}
 
@@ -71,6 +73,8 @@ dat.summary.original = sapply(list.files(path="C:\\Users\\pooja\\Documents\\GitH
 dat.summary = bind_rows(dat.summary.original)
 
 ```
+
+Clean issues due to formatting in the original dataset
 
 ```{r include = FALSE}
 
@@ -103,23 +107,22 @@ unique(dat.summary$State)
 #there is an error in Basti district - the state should be Uttar Pradesh, but the csv says Odisha
 dat.summary = within(dat.summary, State[District_Name %in% c("Basti")]<-"Uttar Pradesh")
 
-#Remove duplicates due to copying errors in manual extraction of land use data
+#Remove any possible duplicates due to copying errors in manual extraction of land use data
 duplicates = dat.summary[duplicated(dat.summary$Census_Code), ]
 dat.summary = anti_join(dat.summary, duplicates)
 
 ```
 
+CLEANING TOTAL ALND AREA RELATED INCONSISTENCIES IN THE DATA
 
-CLEANING INCONSISTENCIES IN THE DATA
-
-In the following chunk of code, we deal with the incosistencies in the data such as the difference in totals of all land uses and the reported total area of a village in hectares. Most importantly, there is often 'unaccounted' land, which has to be considered in the total area to calculate different land tenures.
+In the following chunk of code, we deal with the incosistencies in the data such as the difference in totals of all land uses and the reported total area of a village in hectares. Refer to methods section 'Data sources and preparation' for more details. 
 
 ```{r message = FALSE, warning = FALSE}
 
-#Mismatch in total hectares of land#
-##Is total hectares = land use categories?
+#First, we find mismatch in total hectares of land
+##Is total hectares reported in the district datasheet = total of all land use categories?
 
-#a. total up the land uses we considered to make prop land tenure above
+#a. total up the land uses categories 
 dat.summary = dat.summary %>%
   mutate(Total_land_uses = select(., forests_land:net_sown_area) %>% rowSums(na.rm = TRUE))
 
@@ -132,11 +135,10 @@ dat.summary = dat.summary%>%mutate(Difference_in_totals = Total_area_in_hectares
 
 #d. create column of 'unaccounted' land in records 
 dat.summary = dat.summary%>%mutate(Unaccounted_hectares_in_records =
-                                     case_when(Difference_in_totals>0 ~ Difference_in_totals, 
-                                               TRUE ~ 0))
+                                     case_when(Difference_in_totals>0 ~ Difference_in_totals, TRUE ~ 0))
 
 
-#d. use the new total no. of hectares if old total is not equal to total of land uses 
+#d. Determine which total area to use under different conditions (Refer to Table 3 in the Methods section for more information on the different conditions mentioned below) 
 dat.summary = dat.summary%>%mutate(Total_hectares_for_prop = case_when(
   #if village didn't report total, use total of land uses
   (Total_area_in_hectares == 0 & Total_land_uses>0)~ (Total_land_uses+Unaccounted_hectares_in_records), 
@@ -147,49 +149,35 @@ dat.summary = dat.summary%>%mutate(Total_hectares_for_prop = case_when(
   #Total_area_in_hectares != Total_land_uses ~Total_land_uses, 
   TRUE~ Total_area_in_hectares))
 
-# Filter out the no_match from (d)
-#Use the differences file to further clean data 
-differences = dat.summary%>%filter(Difference_in_totals>2 | Difference_in_totals< -2)
-difference_positive = dat.summary%>%filter(Difference_in_totals>2)
-difference_negative = dat.summary%>%filter(Difference_in_totals< -2)
-
 #Round all numeric data to 3 digits 
 dat.summary = dat.summary %>% 
   mutate(across(where(is.numeric), ~ round(., digits = 3)))
 
 ```
 
-CALCULATING TOTAL AREA IN A VILLAGE
+CREATE FINAL DATASET FOR ANALYSIS
 
-In this chunk of code we calculate the total area of land in a village in different land tenures as well as the proportion of land tenures in each village. We do after we remove state-owned forests and calculate total hectares of land for each land tenure and the proportion of each land tenure in the village. 
+In this chunk of code we calculate proportion of land tenures in each village. We do so after we remove state-owned forests, uninhabited villages, villages with zero population. 
 
-Below are more details on the different kinds of villages we had to remove from the dataset for our analysis:
-  
-1. Inconsistencies in the data:
-We encountered 4 types of inconsistencies with the land use records. Below are the inconsistencies we encountered in the data and the steps taken to note them. 
+We dealt with these 4 types of villages in the census data in the following manner: 
 
-2. State-owned forests:
-As state owned land also receive census codes, we filtered out as many types of state owned land as possible to remove from this analysis. After filtering out potential state-owned land from the land-use records, we have the final dataset of Census 2011villages to be considered in this analysis.
+1. State-owned forests:
+As state owned land also receive census codes, we filtered out as many types of state owned land categories, including firing ranges, forest ranges as possible to remove from this analysis. 
 
-3. Un-inhabited villages:
-We filtered villages which were labelled ‘uninhabited’ by the Census of 2011. Below are the details of the villages filtered out on account of being officially un-inhabited. 
+2. Un-inhabited villages:
+We filtered villages which were labelled ‘uninhabited’ by the Census of 2011. 
 
-4. Zero population villages:
+3. Zero population villages:
 We have considered villages with a population of zero, as they have land use records. We assume that these villages are either un-inhabited as they are farm land or other land use owned by neighbouring villages or the Census 2011 enumerators were unable to reach them. As these villages have a land-use record, we considered them in our analysis. Below are the states in which we found villages with zero population. 
+
+4. No Land use information:
+There were som villages where no information on the land uses was provided. We had to remove these districts. 
 
 With all the data that remained, we calculated the total number of hectares in each category of land tenure- common non-forest land, common forest land, individual land, unaccounted land tenure.
 
 ```{r message = FALSE, warning = FALSE}
 
-##Uninhabited villages
-#Filter all files with total population zero
-population_zero = dat.summary%>%filter(Total_Population == 0)
-uninhabited_village = dat.summary%>%filter(str_detect(Village_name, "Un-inhabited"))
-
-dat.summary = anti_join(dat.summary, population_zero)
-dat.summary = anti_join(dat.summary, uninhabited_village)
-
-#####Forest blocks#####
+#####1. Forest blocks#####
 forest_village_name = dat.summary%>%filter(str_detect(Village_name, "Beat| Block|Forest|Camp| Reserve | Range | Gate| K.M.| Department"))
 dat.summary = anti_join(dat.summary, forest_village_name)
 
@@ -199,20 +187,25 @@ dat.summary = anti_join(dat.summary, forest_block)
 forest_district = dat.summary%>%filter(str_detect(District_Name, "Beat| Block|Forest|Camp| Reserve | Range | Gate| K.M."))
 #none of the disticts are forests
 
-#####No land use data#####
+#####2/3. Uninhabited and zero population villages#####
+#Filter all files with total population zero
+population_zero = dat.summary%>%filter(Total_Population == 0)
+uninhabited_village = dat.summary%>%filter(str_detect(Village_name, "Un-inhabited"))
+
+dat.summary = anti_join(dat.summary, population_zero)
+dat.summary = anti_join(dat.summary, uninhabited_village)
+
+#####4. No land use data#####
 no_landuse_data = dat.summary%>%filter(Total_hectares_for_prop == 0)
 dat.summary = anti_join(dat.summary, no_landuse_data)
 
-#Total number of hectares of different land tenures 
-# Summarise landuse per village 
-
+#Total number of hectares of different de jure land tenures 
 dat.summary = dat.summary %>% dplyr::mutate(Total_Indiv = (net_sown_area+ current_fallow_land+ fallow_other_than_current_fallow_land), 
 Total_Common = (non_agricultural_land+ barren_uncultivable_land+ pasture_grazing_land+ misc_tree_crop_land+ culturable_wasteland), 
                                      Total_Forest = forests_land,
                                      Total_Unaccounted = Unaccounted_hectares_in_records)
 
-#Proportion of land tenures
-# Summarise landuse per village 
+#Proportion of de jure land tenures
 dat.summary = dat.summary %>% dplyr::mutate(Prop_Indiv = ((net_sown_area+ current_fallow_land+ fallow_other_than_current_fallow_land)/Total_hectares_for_prop)*100,  Prop_Common = ((non_agricultural_land+ barren_uncultivable_land+ pasture_grazing_land+ misc_tree_crop_land+ culturable_wasteland)/Total_hectares_for_prop)*100, 
 Prop_Forest = (forests_land/Total_hectares_for_prop)*100,
                                      Prop_Unaccounted = (Unaccounted_hectares_in_records/Total_hectares_for_prop)*100)
@@ -228,7 +221,7 @@ Before creating the final dataset clean the datasheet.
 ```{r message=FALSE, warning=FALSE,include = TRUE}
 #There is a spelling mistake in some district names
 
-#Recode district names  
+#Recode district names which have minor formatting errors such as spaces before or after a distrcit name
 dat.summary = dat.summary%>%dplyr::mutate(District_Name = recode(District_Name, 
                                                      "Ragarh " = "Rajgarh",
                                                      "Rajgarh " = "Rajgarh",
@@ -238,7 +231,7 @@ dat.summary = dat.summary%>%dplyr::mutate(District_Name = recode(District_Name,
                                                      "Papum Pare" = "Papumpare"))
 
 
-#Change some districts from Andhra to Telangana since they now fall in the newly created state
+#Change some districts from Andhra to Telangana since they now fall in the newly created state (post 2011 census) 
 dat.summary = dat.summary%>%mutate(State = case_when(District_Name == 
                                                  "Adilabad"~ "Telangana",
 District_Name == "Karimnagar" ~ "Telangana",
@@ -252,6 +245,8 @@ District_Name =="Warangal"~"Telangana",
 TRUE ~ State))
 
 ```
+
+#Save csv for use in script 02
 
 ```{r include = FALSE}
 
