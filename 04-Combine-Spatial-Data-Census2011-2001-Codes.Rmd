@@ -26,7 +26,6 @@ Spatial data source: SEDAC (https://sedac.ciesin.columbia.edu/data/set/india-ind
 ```{r message = FALSE, warning= FALSE, include=TRUE, echo=FALSE}
 
 #Load all the data
-setwd("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-Original-BOundaries-From-Benjamin-data")
 
 pathname = "C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\Census2011-Original-BOundaries-From-Benjamin-data"
 
@@ -40,7 +39,7 @@ for (i in 1:length(allstates)) {
 #Census codes include codes for State, dist, subdist, village for 2001 and 2011
 #by merging the 2001 codes, we assign the 2011 codes to all the spatial files 
 
-census_code_combined <- read.csv("C:\\Users\\pooja\\Documents\\global-restoration-potential-working-folder\\Census-2001-2011-Codes-Combined.csv", 
+census_code_combined <- read.csv("Census-2001-2011-Codes-Combined.csv", 
                                  header = T, stringsAsFactors = FALSE,
                                  quote = '\"', colClasses = c('character','character', 'character',
                                                               'character', 'character', 

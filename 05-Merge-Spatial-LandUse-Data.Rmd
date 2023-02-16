@@ -37,7 +37,7 @@ for (i in 1:length(allstates)) {
 
 #Land use data from district census handbooks
 #this csv was created in code 01
-land_use = read.csv("C:\\Users\\pooja\\Documents\\GitHub\\Land-Tenure-Restoration-Potential\\Land-Tenure-Restoration-Potential\\All-State-LandUse-Combined.csv",
+land_use = read.csv("All-State-LandUse-Combined.csv",
 header = TRUE, stringsAsFactors = FALSE,
 colClasses=c(Village_name= "character",
                               Census_Code = "character",

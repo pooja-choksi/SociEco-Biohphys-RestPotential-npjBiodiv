@@ -7,7 +7,7 @@ output: html_document
 
 DATA PREPARATION TO COMBINE LAND USE RECORDS AND SPATIAL DATA
 
-In this chunk of code, we combine all the state census code directories the 2001 and 2011 codes are available in this directory (https://censusindia.gov.in/DigitalLibrary/2011CodeDirectory.aspx). 
+In this chunk of code, we combine all the state census code directories the 2001 and 2011 codes are available in this directory (https://censusindia.gov.in/DigitalLibrary/2011CodeDirectory.aspx). This is needed because some of the spatial data for Indian districts have only the census 2001 district code in the Attribute table. 
 
 ```{r setup, include=FALSE}
 #LIBRARIES
