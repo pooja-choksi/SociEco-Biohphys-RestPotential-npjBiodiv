@@ -137,73 +137,23 @@ conflict_obs_district = district_summary[!district_summary$District_Name %in% mp
 
 ```
 
-
-CREATE A RANK BASED ON MPI, CLIMATE VULNERABILITY AND TOTAL POPULATION 
-This data will be stitched with spatial data at the district level in
+This data will be stitched with spatial data at the district level.
 
 ```{r message=FALSE, warning=FALSE, include=TRUE }
-district_mpi_climate = mpi_district_summary
+
+#district_mpi_climate = mpi_district_summary
 
 #convert Living standards to a 0 to 1 scale 
 range01 <- function(x){((x-min(x))/(max(x)-min(x)))}
 
-district_mpi_climate$Living_standards_scaled = range01(district_mpi_climate$Living_standards)
-
-#creating a weighted average for number of people in climate vulnerbility in each district
-district_mpi_climate = district_mpi_climate%>%mutate(climate_vulnerable_weighted = Climate_vulnerability_index*Total_Population_sum)
+mpi_district_summary$Living_standards_scaled = range01(mpi_district_summary$Living_standards)
 
 ##MPI
-#Rank the districts on MPI 
 #rearrange the districts in descending order of MPI
-district_mpi_climate  <- district_mpi_climate [order(district_mpi_climate$Living_standards_scaled, decreasing=TRUE),]
+mpi_district_summary  <- mpi_district_summary [order(mpi_district_summary$Living_standards_scaled, decreasing=TRUE),]
 
 #assign each district a rank
-district_mpi_climate= district_mpi_climate%>% mutate(MPI_rank = match(Living_standards_scaled, unique(Living_standards_scaled)))
-
-##Climate vulnerability 
-#rearrange the districts in descending order of MPI
-district_mpi_climate  <- district_mpi_climate [order(district_mpi_climate$Climate_vulnerability_index, decreasing=TRUE),]
-
-#assign each district a rank
-district_mpi_climate= district_mpi_climate%>% mutate(Vulnerability_Rank = match(Climate_vulnerability_index, unique(Climate_vulnerability_index)))
-
-#Total population
-#rearrange the districts in descending order of MPI
-district_mpi_climate  <- district_mpi_climate [order(district_mpi_climate$Total_Population_sum, decreasing=TRUE),]
-
-#assign each district a rank
-district_mpi_climate= district_mpi_climate%>% mutate(Population_Rank = match(Total_Population_sum, unique(Total_Population_sum)))
-
-#Create the average rank of all three variables
-district_mpi_climate= district_mpi_climate%>%dplyr::mutate(Mean_Rank = rowMeans(.[, 29:30]))
-
-#rearrange the districts in descending order of the mean rank 
-district_mpi_climate  <- district_mpi_climate [order(district_mpi_climate$Mean_Rank, decreasing=FALSE),]
-
-#assign each district a rank
-district_mpi_climate= district_mpi_climate%>%mutate(Combined_Rank = match(Mean_Rank, unique(Mean_Rank)))
-
-#Create a scale of 0 to 1
-range01 <- function(x){(x-min(x))/(max(x)-min(x))}
-
-district_mpi_climate  <- district_mpi_climate [order(district_mpi_climate$Mean_Rank, decreasing=FALSE),]
-
-district_mpi_climate$Mean_Rank_Scaled = range01(district_mpi_climate$Mean_Rank)
-
-```
-
-ALTERNATIVE WAY OF CALCULATING PEOPLE_CENTRIC RESTORATION SCALE 
-
-First, scale both the living stands of MPI and the climate vulnerability from 0 t o1 and then take an average of that instead of the average of just the final district ranks.
-
-```{r message = FALSE, warning= FALSE, include=TRUE}
-
-#Create a scale of 0 to 1
-range01 <- function(x){(x-min(x))/(max(x)-min(x))}
-
-#rescale the Living standards contribution from 0 to 1 
-mpi_district_summary$Living_standards_scaled = 
-  range01(mpi_district_summary$Living_standards)
+mpi_district_summary= mpi_district_summary%>% mutate(MPI_rank = match(Living_standards_scaled, unique(Living_standards_scaled)))
 
 ```
 
@@ -215,57 +165,3 @@ Write csv to be used in script 03
 write.csv(district_mpi_climate, "District-MPI-Combined.csv")
 
 ```
-
-## QUESTION 3:
-
-What are the synergies and trade-offs between socio-economic and climate vulnerability factors when planning restoration according to land tenure regimes or according to total area available?
-DATA SUMMARIES PROVIDED IN RESULTS AND DISCUSSION SECTION
-
-We use the chunk of code below to report key statistics on the districts.
-
-```{r message=FALSE, warning=FALSE, include=TRUE}
-#Question 3: Synergies and tradeoffs in district
-#Use the quantiles to make the categories
-
-#1. Climate vulnerability
-summary(district_mpi_climate_summary$Vulnerability.Index)
-
-district_mpi_climate_summary = district_mpi_climate_summary%>%mutate(vulnerability_cat = case_when(
-  Vulnerability.Index==0 ~ "Very low",
-  Vulnerability.Index>=0 & Vulnerability.Index<0.2779 ~ "Low",
-  Vulnerability.Index>=0.2779 & Vulnerability.Index< 0.4447 ~ "Medium",
-  Vulnerability.Index>=0.4447 & Vulnerability.Index< 1.1000 ~"High",
-  TRUE~ "NA"))
-
-#2. MPI
-summary(district_mpi_climate_summary$MPI_District)
-
-district_mpi_climate_summary = district_mpi_climate_summary%>%mutate(MPI_cat = case_when(
-  MPI_District <0.05725 ~ "Very low",
-  MPI_District>=0.05725 & MPI_District<0.13150 ~ "Low",
-  MPI_District>=0.13150 & MPI_District< 0.19100 ~ "Medium",
-  MPI_District>=0.19100 & MPI_District< 0.39400 ~"High",
-  TRUE~ "NA"))
-
-#3. Total population
-
-summary(district_mpi_climate_summary$Total_Population_sum)
-
-district_mpi_climate_summary = district_mpi_climate_summary%>%mutate(Total_Pop_Cat = case_when(
-  Total_Population_sum <888950 ~ "Very low",
-  Total_Population_sum>= 888950 & Total_Population_sum<1560220 ~ "Low",
-  Total_Population_sum>= 1560220 & Total_Population_sum< 2074132 ~ "Medium",
-  Total_Population_sum>= 2074132 & MPI_District< 6054500 ~"High",
-  TRUE~ "NA"))
-
-#Values in the paper
-#Districts with all variables high
-high_districts = district_mpi_climate_summary%>%filter(MPI_cat == "High" & vulnerability_cat == "High" & Total_Pop_Cat == "High")
-
-verylow_districts = district_mpi_climate_summary%>%filter(MPI_cat == "Very low" & vulnerability_cat == "Very low" & Total_Pop_Cat == "Very low")
-
-low_districts = district_mpi_climate_summary%>%filter(MPI_cat == "Low" &
-                                                         vulnerability_cat == "Low" & Total_Pop_Cat == "Low")
-
-```
-
