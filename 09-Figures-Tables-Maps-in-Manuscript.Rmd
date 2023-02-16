@@ -331,9 +331,7 @@ writeOGR(districts_final, layer = "districts_final", dsn= "District-MPI-Merged-B
 #also create a dataframe from the shapefile to use for analysis below
 districts_df_final <- as(districts_final, "data.frame")
 
-write.csv(districts_df_final, "District-Climate-MPI-Biophys-Ranked-Agreement-Percentiles.csv")
-
-#alternative file
-write.csv(districts_df_final, "District-MPI-Biophys-Ranked-Agreement-Percentiles.csv")
+#save csv
+write.csv(districts_df_final, "District-MPI-Biophys-Agreement-Percentiles.csv")
 
 ```

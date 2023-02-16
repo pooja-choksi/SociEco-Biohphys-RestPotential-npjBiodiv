@@ -17,17 +17,11 @@ library(ggplot2)
 
 ```
 
-Read in the data from previous script which has the districts ranked according to 
-1. Climate vulnerability 
-2. Total population 
-3. MPI 
-4. A combination of all variables 
-
-It also has district level land tenure data
+READ IN ALL THE DATA
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 
-district_mpi_climate_summary = read.csv("District-Climate-MPI-Ranked.csv")
+district_mpi_summary = read.csv("District-MPI-Combined.csv")
 
 aspirational_districts = read.csv("Aspirational-Districts-Phase1.csv")
 ```
@@ -54,81 +48,31 @@ aspirational_districts = aspirational_districts%>%dplyr::mutate(District.name = 
 "Dakshin dinajpur" = "Dakshin Dinajpur"))
 
 #Combine aspiration districts with the main dataset
-district_mpi_climate_summary = merge(district_mpi_climate_summary, aspirational_districts[c("District.name", "S.NO.", "Aspirational_District")], by.x = c("District_Name", "State"), 
+district_mpi_summary = merge(district_mpi_summary, aspirational_districts[c("District.name", "S.NO.", "Aspirational_District")], by.x = c("District_Name", "State"), 
               by.y =c("District.name", "S.NO."), all.x=T)
 
 #74 aspirational districts 
 ```
+
 RESULTS TO REPORT IN THE PAPER 
-We look at the top and bottom quantile of the mean rank of districts and discuss restoration methods which are appropriate for different land tenure regimes in more detail
+We look at the top and bottom quantile of the scaled biophysical potential and MPI and discuss restoration methods which are appropriate for different land tenure regimes in more detail
 
 1. CREATE THE DFS FOR TOP AND BOTTOM DISTRICTS 
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 
-#1. People centric restoration scale 
-#The mean of living stands MPI and the climate vulnerability 
-#using this in final figures as it is the least amount of conversion of data
-summary(district_mpi_climate_summary$People_centric_Mean)
-#1st q = 0.5361
-#3rd q = 0.7067
-
-top_districts = district_mpi_climate_summary%>%filter(People_centric_Mean>0.7067)
-
-high_districts = district_mpi_climate_summary%>%filter(People_centric_Mean>0.7067)
-
-middle_districts = district_mpi_climate_summary%>%filter(People_centric_Mean >0.5361 & People_centric_Mean<0.7067)
-
-#2. Living standards of MPI scale 
-summary(district_mpi_climate_summary$Living_standards_scaled)
+#1. Living standards of MPI scale 
+summary(district_mpi_summary$Living_standards_scaled)
 #1st q = 0.6182
 #3rd q = 0.7870
 
-top_districts_mpi = district_mpi_climate_summary%>%filter(People_centric_Mean>0.7870)
-
-#3. Climate vulnerability scale
-summary(district_mpi_climate_summary$Climate_vulnerability_scaled)
-#1st q = 0.4279
-#3rd q = 0.6650
-
-top_districts_climate = district_mpi_climate_summary%>%filter(People_centric_Mean>0.6650)
+top_districts_mpi = district_mpi_summary%>%filter(Living_standards_scaled>0.7870)
 
 ```
 
-QUESTION 1: Which are the districts that should be prioritized when considering the following variables: (a) maximum population, (c) Multidimensional poverty index, (b) climate vulnerability index and (d) a combination of the variables?
+QUESTION: Which land tenures within districts provide the largest number of hectares for restoration? 
 
-PLOT OF THE STATES IN WHICH WE FIND THE TOP DISTRICTS 
-
-```{r message= FALSE, warning=FALSE, include=TRUE}
-
-#1. people-centric restoration scale 
-#Which states make up the top quantile of districts for people centrict restoration?
-top_states = top_districts%>%group_by(State)%>%count()
-  
-#plot in descending order#assign order to prop variable
-prop_order <-
-  top_states%>%
-  arrange(desc(n)) %>%
-  mutate(State = factor(State))
-
-topstates_plot = top_states%>%mutate(State = factor(State, levels = prop_order$State, ordered = TRUE))%>%ggplot(aes(x= State, y = n))+geom_col(aes(x=State), fill = "#440154FF")+theme_classic()+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  labs(x = "State/ Union Territory", y = "Number of districts")
-
-topstates_plot
-
-#2. Living standards of MPI scale 
-#Which states make up the top quartile of districts for living standards poverty?
-top_states_mpi = top_districts_mpi%>%group_by(State)%>%count()
-
-#3. Climate vulnerability 
-#Which states make up the top quartile of districts for climate vulnerability?
-top_states_climate = top_districts_climate%>%group_by(State)%>%count()
-
-```
-
-QUESTION 2: Which land tenures within districts provide the largest number of hectares for restoration?
-
-PLOT OF THE DISTRIBUTION OF EACH LAND TENURE IN THE TOP DISTRICTS AND REPORT % of LAND TENURE IN TOP DISTRICTS
+This is the chunk of code used to create Figure 3
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 
